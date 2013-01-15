@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table>
+    <head>
+        <col type="INTEGER" num="1" comment="Id типа">GENA_TIP_ID</col>
+        <col type="SMALLINT" num="2" comment="Тип вагона">KOD</col>
+        <col type="SMALLINT" num="3" comment="Код строки">LINE</col>
+    </head>
+    <row num="1">
+        <col num="1">some body1</col>
+        <col num="2">some body2</col>
+        <col num="3">some body3</col>
+    </row>
+    <row num="2">
+        <col num="1">some body1</col>
+        <col num="2">some body2</col>
+        <col num="3">some body3</col>
+    </row>
+    <row num="3">
+        <col num="1">some body1</col>
+        <col num="2">some body2</col>
+        <col num="3">some body3</col>
+    </row>
+</table>
