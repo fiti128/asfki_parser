@@ -1,9 +1,12 @@
 package ru.retbansk.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
+
 
 /**
  * Main domain class. Root for all xml files
@@ -12,16 +15,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="table")
 public class XmlRoot {
-	private Header header;
+	private List<Header> headerList;
 	private List<Row> rowsList;
+	public static List<Row> publicList = new ArrayList<Row>();
 	
-	public Header getHeader() {
-		return header;
+	public List<Header> getHeaderList() {
+		return headerList;
 	}
 	@XmlElement(name="head")
-	public void setHeader(Header header) {
-		this.header = header;
+	public void setHeaderList(List<Header> headerList) {
+		this.headerList = headerList;
 	}
+
 	public List<Row> getRowsList() {
 		return rowsList;
 	}
@@ -30,5 +35,30 @@ public class XmlRoot {
 		this.rowsList = rowsList;
 	}
 	
-	
+	public void setHeadListener(final HeadListener hl ){
+		headerList = (hl == null) ? null: new ArrayList<Header>() {
+			public boolean add(Header header) {
+				hl.handleHeader(XmlRoot.this, header);
+				return false;
+			}
+		};
+		
+	}
+	public void setRowListener(final RowListener rl) {
+        rowsList = (rl == null) ? null : new ArrayList<Row>() {
+
+            public boolean add(Row o) {
+                rl.handleRow(XmlRoot.this, o);
+                return false;
+            }
+        };
+    }
+    public static interface RowListener {
+        void handleRow(XmlRoot xmlRoot, Row row);
+
+    }
+    public static interface HeadListener {
+    	void handleHeader(XmlRoot xmlRoot, Header header);
+    	
+    }
 }

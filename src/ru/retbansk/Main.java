@@ -2,7 +2,12 @@ package ru.retbansk;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,13 +17,22 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import ru.retbansk.domain.*;
+import ru.retbansk.domain.spisok.Root;
+import ru.retbansk.domain.spisok.SpisokColumn;
 
 public class Main {
 	public static String OH_NIFIGA_ZH_TAKOE_BOLSHOE_SLOVO_AZH_PRJAM_NEMOGU = "¬Œ“ “¿  ¬Œ“";
 	public static String OH_NIFIGA_ZH_TAKOE_BOLSHOE_SLOVO_AZH_PRJAM_KLASS = "¬Œ“ “¿  “Œ∆≈ ¡€¬¿≈“";
 	private static final String INPUT_ZIP_FILE = "H_SISTEMA.ZIP";
+	public static Set<Row> rowSet = new HashSet<Row>();
+	public static long counter = 0;
 	static XmlRoot xmlRoot;
 	static HeadColumn hc1;
 	static HeadColumn hc2;
@@ -59,9 +73,11 @@ public class Main {
 		
 		header = new Header();
 		header.setHeadColumnlist(headColumnList);
+		List<Header> headerList = new ArrayList<Header>();
+		headerList.add(header);
 		
 		xmlRoot = new XmlRoot();
-		xmlRoot.setHeader(header);
+		xmlRoot.setHeaderList(headerList);
 		
 		rc1 = new RowColumn();
 		rc2 = new RowColumn();
@@ -96,25 +112,97 @@ public class Main {
 	/**
 	 * @param args
 	 * @throws JAXBException 
-	 * @throws FileNotFoundException 
+	 * @throws ParserConfigurationException 
+	 * @throws SAXException 
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws JAXBException, FileNotFoundException {
+	public static void main(String[] args) throws JAXBException, SAXException, ParserConfigurationException, IOException {
 		prepare();
 		JAXBContext context = JAXBContext.newInstance(XmlRoot.class);
-	    Marshaller m = context.createMarshaller();
-	    m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-//	    m.setProperty(Marshaller.JAXB_ENCODING, Marshaller.);
-
-	    // Write to System.out
-	    m.marshal(xmlRoot, System.out);
-		
-	    m.marshal(xmlRoot, new File("lol.xml"));
+//	    Marshaller m = context.createMarshaller();
+//	    m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+////	    m.setProperty(Marshaller.JAXB_ENCODING, Marshaller.);
+//
+//	    // Write to System.out
+//	    m.marshal(xmlRoot, System.out);
+//		
+//	    m.marshal(xmlRoot, new File("lol.xml"));
 	    
 	    Unmarshaller um = context.createUnmarshaller();
+	    List<Row> list = new ArrayList<Row>();
 	    
-	    XmlRoot xmlRoot2 = (XmlRoot) um.unmarshal(new FileReader("H_SISTEMA.xml"));
-	    System.out.println(xmlRoot2.getRowsList().get(6).getRowColumnList().get(5).getBody());
-	    
+	    final XmlRoot.RowListener xmlRootListener = new XmlRoot.RowListener() {
+			
+			@Override
+			public void handleRow(XmlRoot xmlRoot, Row row) {
+//				System.out.println(row.getRowColumnList().get(26).getBody());
+				
+//				rowSet.add(row);
+				if (XmlRoot.publicList.size() >= 10000)  XmlRoot.publicList.clear();
+					XmlRoot.publicList.add(row);
+				counter++;
+				
+				
+			}
+
+
+			
+		};
+		final XmlRoot.HeadListener xmlHeadListener = new XmlRoot.HeadListener() {
+			
+			@Override
+			public void handleHeader(XmlRoot xmlRoot, Header header) {
+				System.out.println("In handleHeader");
+				System.out.println(header.getHeadColumnlist().size());
+				for (HeadColumn hc : header.getHeadColumnlist()) {
+					System.out.print(hc.getNum()+ " ");
+					System.out.print(hc.getComment() + " ");
+					System.out.println(hc.getBody());
+				}
+				
+			}
+		};
+		um.setListener(new Unmarshaller.Listener() {
+			public void beforeUnmarshal(Object target, Object parent) {
+				if (target instanceof XmlRoot) {
+					 ((XmlRoot) target).setRowListener(xmlRootListener);
+					 ((XmlRoot) target).setHeadListener(xmlHeadListener);
+					 
+				}
+			}
+			public void afterUnmarshal(Object target, Object parent) {
+				if (target instanceof XmlRoot) {
+					 ((XmlRoot) target).setRowListener(null);
+					 ((XmlRoot) target).setHeadListener(null);
+				}
+			}
+		});
+		
+        // create a new XML parser
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        XMLReader reader = factory.newSAXParser().getXMLReader();
+        
+        reader.setContentHandler(um.getUnmarshallerHandler());
+
+
+        reader.parse(new File("lol.xml").toURI().toString());
+		
+        System.out.println(counter);
+        
+        URL website = new URL("http://ircm-srv.mnsk.rw/ASFKI_XML/spisok.xml");
+        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+        FileOutputStream fos = new FileOutputStream("d_spisok.xml");
+        fos.getChannel().transferFrom(rbc, 0, 1 << 24);
+        
+        context = JAXBContext.newInstance(Root.class);
+        um = context.createUnmarshaller();
+        Root root = (Root)um.unmarshal(new File("d_spisok.xml")); 
+        
+        for (SpisokColumn column : root.getRow().getColumn()) {
+			System.out.println(column.getBody());
+		}
+        
 	}
 
 }
