@@ -1,4 +1,4 @@
-package rw.asfki.domain.spisok;
+package rw.asfki.JAXB2Entity.spisok;
 
 import java.util.List;
 

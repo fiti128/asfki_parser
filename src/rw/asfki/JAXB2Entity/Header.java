@@ -1,4 +1,4 @@
-package rw.asfki.domain;
+package rw.asfki.JAXB2Entity;
 
 import java.util.List;
 

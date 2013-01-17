@@ -17,9 +17,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import rw.asfki.domain.*;
-import rw.asfki.domain.spisok.Root;
-import rw.asfki.domain.spisok.SpisokColumn;
+
+import rw.asfki.JAXB2Entity.*;
+import rw.asfki.JAXB2Entity.spisok.Root;
+import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 
 public class Main {
 	public static String OH_NIFIGA_ZH_TAKOE_BOLSHOE_SLOVO_AZH_PRJAM_NEMOGU = "¬Œ“ “¿  ¬Œ“";

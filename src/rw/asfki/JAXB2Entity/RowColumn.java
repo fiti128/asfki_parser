@@ -1,4 +1,4 @@
-package rw.asfki.domain;
+package rw.asfki.JAXB2Entity;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;

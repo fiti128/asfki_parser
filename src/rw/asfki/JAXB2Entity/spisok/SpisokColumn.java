@@ -1,4 +1,4 @@
-package rw.asfki.domain.spisok;
+package rw.asfki.JAXB2Entity.spisok;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlValue;
