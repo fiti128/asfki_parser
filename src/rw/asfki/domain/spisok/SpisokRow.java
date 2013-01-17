@@ -1,4 +1,4 @@
-package ru.retbansk.domain.spisok;
+package rw.asfki.domain.spisok;
 
 import java.util.List;
 

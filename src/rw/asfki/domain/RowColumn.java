@@ -1,4 +1,4 @@
-package ru.retbansk.domain;
+package rw.asfki.domain;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;

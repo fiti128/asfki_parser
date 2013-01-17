@@ -1,4 +1,4 @@
-package ru.retbansk.domain.spisok;
+package rw.asfki.domain.spisok;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlValue;

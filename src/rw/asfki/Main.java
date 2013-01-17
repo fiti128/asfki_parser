@@ -1,9 +1,7 @@
-package ru.retbansk;
+package rw.asfki;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -12,20 +10,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
-import ru.retbansk.domain.*;
-import ru.retbansk.domain.spisok.Root;
-import ru.retbansk.domain.spisok.SpisokColumn;
+import rw.asfki.domain.*;
+import rw.asfki.domain.spisok.Root;
+import rw.asfki.domain.spisok.SpisokColumn;
 
 public class Main {
 	public static String OH_NIFIGA_ZH_TAKOE_BOLSHOE_SLOVO_AZH_PRJAM_NEMOGU = "¬Œ“ “¿  ¬Œ“";

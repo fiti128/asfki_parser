@@ -1,4 +1,4 @@
-package ru.retbansk.domain;
+package rw.asfki.domain;
 
 import java.util.ArrayList;
 import java.util.List;

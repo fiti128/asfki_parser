@@ -1,4 +1,4 @@
-package ru.retbansk.util;
+package rw.asfki.util;
 
 import java.io.File;
 import java.io.FileInputStream;

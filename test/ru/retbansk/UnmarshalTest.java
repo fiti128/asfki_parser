@@ -1,6 +1,7 @@
 package ru.retbansk;
 
 import static org.junit.Assert.*;
+import junit.framework.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,7 +14,8 @@ public class UnmarshalTest {
 
 	@Test
 	public void test() {
-		fail("Not yet implemented");
+		Assert.assertTrue(false);
+		assertTrue(true);
 	}
 
 }

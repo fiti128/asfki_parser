@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ru.retbansk;
+package rw.asfki;
 
 import java.util.Date;
 
