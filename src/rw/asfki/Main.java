@@ -114,6 +114,7 @@ public class Main {
 	public static void main(String[] args) throws JAXBException, SAXException, ParserConfigurationException, IOException {
 		prepare();
 		JAXBContext context = JAXBContext.newInstance(XmlRoot.class);
+		Unmarshaller um = context.createUnmarshaller();
 //	    Marshaller m = context.createMarshaller();
 //	    m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 ////	    m.setProperty(Marshaller.JAXB_ENCODING, Marshaller.);
@@ -123,7 +124,6 @@ public class Main {
 //		
 //	    m.marshal(xmlRoot, new File("lol.xml"));
 	    
-	    Unmarshaller um = context.createUnmarshaller();
 	    List<Row> list = new ArrayList<Row>();
 	    
 	    final XmlRoot.RowListener xmlRootListener = new XmlRoot.RowListener() {
