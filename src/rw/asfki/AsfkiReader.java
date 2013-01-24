@@ -9,7 +9,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ReaderImpl implements Reader {
+public class AsfkiReader implements Reader {
 	private static String NEXT_TOKEN_REGEX = "(?s).*\\S+.*";
 	private File file;
 	private Scanner rootScanner;
@@ -25,7 +25,7 @@ public class ReaderImpl implements Reader {
 	private String rootTag;
 	
 	
-	private ReaderImpl(Builder builder) throws FileNotFoundException {
+	private AsfkiReader(Builder builder) throws FileNotFoundException {
 		this.rowTag = builder.rowTag;
 		this.columnTag = builder.columnTag;
 		this.rowAttributes = builder.rowAttributes;
@@ -87,7 +87,7 @@ public class ReaderImpl implements Reader {
 		}
 		
 		public Reader build() throws FileNotFoundException {
-			return new ReaderImpl(this);
+			return new AsfkiReader(this);
 		}
 	
 	
@@ -156,7 +156,9 @@ public class ReaderImpl implements Reader {
 		rootScanner.useDelimiter(rootDelimeter);
 		
 	}
-
+	private void hello() {
+		System.out.println("hello legres");
+	}
 	private void setRowDelimeter() throws FileNotFoundException {
 		this.rowScanner = new Scanner(file);
 		StringBuilder sbDelimiter = new StringBuilder();
