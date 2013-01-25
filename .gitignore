@@ -3,4 +3,6 @@ temp/
 .project
 H_SISTEMA.*
 STRANA.*
+bin/
+logs/
 

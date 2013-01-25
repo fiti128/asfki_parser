@@ -149,7 +149,7 @@ public class AsfkiReader implements Reader {
 
 //Unimplemented yet
 	private void setRootDelimeter() throws FileNotFoundException {
-		this.rootScanner = new Scanner(file);
+		this.rootScanner = new Scanner(file, "UTF-8");
 		StringBuilder rootDelimeterBuilder = new StringBuilder();
 		rootDelimeterBuilder.append("(<"+ rootTag + ">|</" +rootTag + ">)");
 		String rootDelimeter = rootDelimeterBuilder.toString();
@@ -160,7 +160,7 @@ public class AsfkiReader implements Reader {
 		System.out.println("hello legres");
 	}
 	private void setRowDelimeter() throws FileNotFoundException {
-		this.rowScanner = new Scanner(file);
+		this.rowScanner = new Scanner(file, "UTF-8");
 		StringBuilder sbDelimiter = new StringBuilder();
 		sbDelimiter.append("(<").append(this.rowTag);
 		if (this.rowAttributes != null) {

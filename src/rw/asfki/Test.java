@@ -15,7 +15,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class Test {
 
 	
-	private static String INPUT_FILE = "STRANA.xml";
+	private static String INPUT_FILE = "KOD_DET_VAG.xml";
 	private static String FILTER_REGEX = "[^\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\uD800\uDC00-\uDBFF\uDFFF[\\n\\r]]";
 	private static String COLUMN_TAG = "col";
 	private static String ROW_TAG = "row";
