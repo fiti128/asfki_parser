@@ -1,13 +1,20 @@
 package rw.asfki;
 
+
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import rw.asfki.domain.ASFKI_RowColumn;
 
 public class AsfkiReader implements Reader {
 	private static String NEXT_TOKEN_REGEX = "(?s).*\\S+.*";
@@ -115,9 +122,9 @@ public class AsfkiReader implements Reader {
 	}
 
 	@Override
-	public List<String> next() {
+	public List<ASFKI_RowColumn> next() {
 		String next = rowScanner.next();
-		List<String> list = new ArrayList<String>();
+		List<ASFKI_RowColumn> list = new ArrayList<ASFKI_RowColumn>();
 		if (next.length() > 0) {
 			// Just ignoring first token. Header expected
 			if (header) {
@@ -132,14 +139,36 @@ public class AsfkiReader implements Reader {
 			}
 			columnScanner = new Scanner(next);
 			columnScanner.useDelimiter(columnDelimeterRegex);
+
 			while (columnScanner.hasNext()) {
+				if (!columnScanner.hasNext(NEXT_TOKEN_REGEX)) {
+					columnScanner.next();
+					continue;
+				}
 				String colNext = columnScanner.next();
+				
 				if (bodyRegexFilter != null) {
 					colNext = colNext.replaceAll(bodyRegexFilter, "");
 				}
-				colNext = colNext.trim();
-				colNext = colNext.substring(0, colNext.length() - (columnTag.length() + 3));
-				list.add(colNext);
+				
+				Map<String, String> map = new HashMap<String,String>();
+					for (String attribute : columnAttributes) {
+						StringBuilder regexBuilder = new StringBuilder();
+						regexBuilder.append(attribute).append("=\".+?\"");
+						Pattern pattern = Pattern.compile(regexBuilder.toString());
+						Matcher matcher = pattern.matcher(colNext);
+						if (matcher.find()) {
+							String wantedAttribute = matcher.group().split("\"")[1];
+							map.put(attribute, wantedAttribute);
+						}
+					}
+					int bodyIndex = colNext.indexOf(">") + 1;
+					String body = colNext.substring(bodyIndex);
+					body = body.trim();
+					ASFKI_RowColumn rowColumn = new ASFKI_RowColumn();
+					rowColumn.setAttributes(map);
+					rowColumn.setBody(body);
+					list.add(rowColumn);
 			}
 		
 		}
@@ -170,20 +199,13 @@ public class AsfkiReader implements Reader {
 		}
 		sbDelimiter.append(">|</").append(rowTag).append(">|</")
 			.append(rootTag).append(">)");
-		System.out.println(sbDelimiter);
 		rowScanner.useDelimiter(sbDelimiter.toString()); 
 		
 	}
 	
 	private void setColumnDelimeterRegex() {
 		StringBuilder sbDelimeter = new StringBuilder();
-		sbDelimeter.append("<").append(this.columnTag);
-		if (this.columnAttributes != null) {
-			for (String attribute: this.columnAttributes) {
-				sbDelimeter.append(" ").append(attribute).append("=\".*?\"");
-			}
-		}
-		sbDelimeter.append(">");
+		sbDelimeter.append("(<").append(this.columnTag).append("|</").append(this.columnTag).append(">)");
 		columnDelimeterRegex = sbDelimeter.toString();
 		
 	}
