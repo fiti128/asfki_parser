@@ -7,6 +7,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import rw.asfki.domain.ASFKI_RowColumn;
+
 public class Db2lWriter extends Writer {
 	protected static Logger logger = Logger.getLogger("service");
 	private static String DEFAULT_DELIMETER = "|";
@@ -22,7 +24,8 @@ public class Db2lWriter extends Writer {
 		this.columnDelimeter = columnDelimeter;
 	}
 
-	public void write(List<String> stringList) throws IOException {
+	public void write(List<String> stringList) throws Exception {
+		if (stringList == null | stringList.size() == 0) throw new Exception("No data to write");
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < stringList.size() - 1; i++) {
 			sb.setLength(0);
@@ -48,6 +51,18 @@ public class Db2lWriter extends Writer {
 		bw.write(cbuf, off, len);
 		bw.newLine();
 		
+	}
+	public void writeDomain(List<ASFKI_RowColumn> list) throws Exception {
+		if (list == null | list.size() == 0) throw new Exception("No data to write");
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < list.size() - 1; i++) {
+			sb.setLength(0);
+			sb.append(list.get(i).getBody()).append(columnDelimeter);
+			bw.write(sb.toString());
+		}
+		bw.write(list.get(list.size() - 1).getBody());
+		bw.newLine();
+		logger.info("line written");
 	}
 
 	public String getColumnDelimeter() {

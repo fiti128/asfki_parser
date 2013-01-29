@@ -165,7 +165,7 @@ public class AsfkiReader implements Reader {
 		sbDelimiter.append("(<").append(this.rowTag);
 		if (this.rowAttributes != null) {
 			for (String attribute: this.rowAttributes) {
-				sbDelimiter.append(" ").append(attribute).append("=\"\\w*\"");
+				sbDelimiter.append(" ").append(attribute).append("=\".*?\"");
 			}
 		}
 		sbDelimiter.append(">|</").append(rowTag).append(">|</")
@@ -180,7 +180,7 @@ public class AsfkiReader implements Reader {
 		sbDelimeter.append("<").append(this.columnTag);
 		if (this.columnAttributes != null) {
 			for (String attribute: this.columnAttributes) {
-				sbDelimeter.append(" ").append(attribute).append("=\"\\w*\"");
+				sbDelimeter.append(" ").append(attribute).append("=\".*?\"");
 			}
 		}
 		sbDelimeter.append(">");
