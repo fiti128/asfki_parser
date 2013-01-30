@@ -10,5 +10,7 @@ public interface Reader {
 	
 	public List<ASFKI_RowColumn> next();
 	
+	public void close();
+	
 
 }

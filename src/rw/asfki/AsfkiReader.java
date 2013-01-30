@@ -5,8 +5,6 @@ package rw.asfki;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,18 +174,7 @@ public class AsfkiReader implements Reader {
 		return list;
 	}
 
-//Unimplemented yet
-	private void setRootDelimeter() throws FileNotFoundException {
-		this.rootScanner = new Scanner(file, "UTF-8");
-		StringBuilder rootDelimeterBuilder = new StringBuilder();
-		rootDelimeterBuilder.append("(<"+ rootTag + ">|</" +rootTag + ">)");
-		String rootDelimeter = rootDelimeterBuilder.toString();
-		rootScanner.useDelimiter(rootDelimeter);
-		
-	}
-	private void hello() {
-		System.out.println("hello legres");
-	}
+
 	private void setRowDelimeter() throws FileNotFoundException {
 		this.rowScanner = new Scanner(file, "UTF-8");
 		StringBuilder sbDelimiter = new StringBuilder();
@@ -207,6 +194,14 @@ public class AsfkiReader implements Reader {
 		StringBuilder sbDelimeter = new StringBuilder();
 		sbDelimeter.append("(<").append(this.columnTag).append("|</").append(this.columnTag).append(">)");
 		columnDelimeterRegex = sbDelimeter.toString();
+		
+	}
+
+	@Override
+	public void close() {
+		if (rootScanner != null) rootScanner.close();
+		if (rowScanner != null)	rowScanner.close();
+		if (columnScanner != null)columnScanner.close();
 		
 	}
 }

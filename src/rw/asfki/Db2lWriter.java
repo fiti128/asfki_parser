@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import rw.asfki.domain.ASFKI_RowColumn;
 
 public class Db2lWriter extends Writer {
-	protected static Logger logger = Logger.getLogger("service");
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
 	private BufferedWriter bw;
@@ -34,7 +32,6 @@ public class Db2lWriter extends Writer {
 		}
 		bw.write(stringList.get(stringList.size() - 1));
 		bw.newLine();
-		logger.info("line written");
 
 	}
 	public void flush() throws IOException {
@@ -62,7 +59,6 @@ public class Db2lWriter extends Writer {
 		}
 		bw.write(list.get(list.size() - 1).getBody());
 		bw.newLine();
-		logger.info("line written");
 	}
 
 	public String getColumnDelimeter() {
