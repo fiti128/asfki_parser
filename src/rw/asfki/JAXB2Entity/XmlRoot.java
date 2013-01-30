@@ -37,6 +37,11 @@ public class XmlRoot {
 	
 	public void setHeadListener(final HeadListener hl ){
 		headerList = (hl == null) ? null: new ArrayList<Header>() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 2388867149989331681L;
+
 			public boolean add(Header header) {
 				hl.handleHeader(XmlRoot.this, header);
 				return false;
@@ -47,7 +52,12 @@ public class XmlRoot {
 	public void setRowListener(final RowListener rl) {
         rowsList = (rl == null) ? null : new ArrayList<Row>() {
 
-            public boolean add(Row o) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = -6064464190091234083L;
+
+			public boolean add(Row o) {
                 rl.handleRow(XmlRoot.this, o);
                 return false;
             }

@@ -201,7 +201,7 @@ public class AsfkiReader implements Reader {
 	public void close() {
 		if (rootScanner != null) rootScanner.close();
 		if (rowScanner != null)	rowScanner.close();
-		if (columnScanner != null)columnScanner.close();
+		if (columnScanner != null) columnScanner.close();
 		
 	}
 }

@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -31,38 +32,38 @@ import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 
-public class UpdateAsfkiFilesJob implements Runnable {
+public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	protected static Logger logger = Logger.getLogger("service");
-	private static String DEFAULT_TIME = "1111-11-11 11:11:11.111111";
-	private static String INPUT_FILE = "spisok.xml";
-	private static String FILTER_REGEX = "[^\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\uD800\uDC00-\uDBFF\uDFFF[\\n\\r]]";
-	private static String COLUMN_TAG = "col";
-	private static String ROW_TAG = "row";
-	private static String ROW_ATTRIBUTE = "num";
-	private static String COLUMN_ATTRIBUTE = ROW_ATTRIBUTE;
-	private static String ROOT_TAG = "table";
-	private static String SPISOK_URL_FOLDER = "http://ircm-srv.mnsk.rw/ASFKI_XML/";
-	private static String SPISOK_FILE_NAME = "spisok.xml";
-	private static String DOWNLOAD_FOLDER = "temp";
-	private static String ASFKI_DB2_FOLDER = "asfki_db2_files";
-	private static String ARCHIVE_EXTENTION = ".zip";
-	private static String DB2L_EXTENTION = ".txt";
-	private static String COLUMN_ATTRIBUTE1 = "cor_time";
-	private static String COLUMN_ATTRIBUTE2 = "format";
+	private String defaultTime = DEFAULT_TIME;
+	private String inputFile = DEFAULT_INPUT_FILE;
+	private String filterRegex = DEFAULT_FILTER_REGEX;
+	private String columnTag = DEFAULT_COLUMN_TAG;
+	private String rowTag = DEFAULT_ROW_TAG;
+	private String rowAttribute = DEFAULT_ROW_ATTRIBUTE;
+	private String columnAttribute = rowAttribute;
+	private String rootTag = DEFAULT_ROW_ATTRIBUTE;
+	private String spisokUrlFolder = DEFAULT_SPISOK_URL_FOLDER;
+	private String spisokFileName = DEFAULT_SPISOK_FILE_NAME;
+	private String downloadFolder = DEFAULT_DOWNLOAD_FOLDER;
+	private String asfkiDb2Folder = DEFAULT_ASFKI_DB2_FOLDER;
+	private String archiveExtention = DEFAULT_ARCHIVE_EXTENTION;
+	private String db2lExtention = DEFAULT_DB2L_EXTENTION;
+	private String spisokColumnAttribute1 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE1;
+	private String spisokColumnAttribute2 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE2;
 	private static List<ASFKI_RowColumn> downloadedList;
 	
 	private List<String> getListToUpdate() throws IOException {
 		
 		//Creating folder for temporary files
-		File folder = new File(DOWNLOAD_FOLDER);
+		File folder = new File(downloadFolder);
 		if(!folder.exists()){
 			folder.mkdir();
 		}
 		
 		//Downloading spisok
-		  URL fileUrl = new URL(SPISOK_URL_FOLDER + SPISOK_FILE_NAME);
+		  URL fileUrl = new URL(spisokUrlFolder + spisokFileName);
 		  ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
-		  File downloadedSpisok = new File(DOWNLOAD_FOLDER + "/" + SPISOK_FILE_NAME);
+		  File downloadedSpisok = new File(downloadFolder + "/" + spisokFileName);
 		  FileOutputStream fos = new FileOutputStream(downloadedSpisok);
 		  fos.getChannel().transferFrom(rbc, 0, 1 << 24);
 		  fos.flush();
@@ -73,13 +74,13 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		 // Initializing reader for downloaded file
 
 			List<String> columnAttributesList = new ArrayList<String>();
-			columnAttributesList.add(COLUMN_ATTRIBUTE1);
-			columnAttributesList.add(COLUMN_ATTRIBUTE2);
+			columnAttributesList.add(spisokColumnAttribute1);
+			columnAttributesList.add(spisokColumnAttribute2);
 			
-			Reader reader = new AsfkiReader.Builder(downloadedSpisok, ROW_TAG, COLUMN_TAG)
+			Reader reader = new AsfkiReader.Builder(downloadedSpisok, rowTag, columnTag)
 			.columnAttributes(columnAttributesList)
-			.bodyRegexFilter(FILTER_REGEX)
-			.rootTag(ROOT_TAG)
+			.bodyRegexFilter(filterRegex)
+			.rootTag(rootTag)
 			.header(true)
 			.build();
 			
@@ -104,7 +105,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			try {
 				JAXBContext context = JAXBContext.newInstance(Root.class);
 				Unmarshaller um = context.createUnmarshaller();
-				Root root = (Root)um.unmarshal(new File(INPUT_FILE));
+				Root root = (Root)um.unmarshal(new File(inputFile));
 				spisokColumnlist = root.getRow().getColumn();
 			} catch (JAXBException e) {
 				spisokColumnlist = new ArrayList<SpisokColumn>(0);
@@ -120,7 +121,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				oldMap.put(key, value);
 			}
 			// Creating update list
-			Timestamp defaultTs = Timestamp.valueOf(DEFAULT_TIME);
+			Timestamp defaultTs = Timestamp.valueOf(defaultTime);
 			List<String> listToUpdate = new ArrayList<String>();
 			for (String key : listToCompare) {
 				Timestamp oldTimeToCompare = (oldMap.get(key) == null) ? defaultTs : oldMap.get(key);
@@ -135,7 +136,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	
 	private void updateFiles(List<String> list) throws Exception {
 		UnZip unzip = new UnZip();
-		File folder = new File(ASFKI_DB2_FOLDER);
+		File folder = new File(asfkiDb2Folder);
 		if(!folder.exists()){
 			folder.mkdir();
 		}
@@ -147,13 +148,13 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		
 		for (String fileName : list) {
 			// Download file
-			String db2FilePath = ASFKI_DB2_FOLDER + "/" + fileName + DB2L_EXTENTION;
+			String db2FilePath = asfkiDb2Folder + "/" + fileName + db2lExtention;
 			File db2File = new File(db2FilePath);
 			if(!db2File.exists()) {
 				db2File.createNewFile();
 			}
-			URL fileUrl = new URL(SPISOK_URL_FOLDER + fileName + ARCHIVE_EXTENTION);
-			String filePath = DOWNLOAD_FOLDER + "/" + fileName + ARCHIVE_EXTENTION;
+			URL fileUrl = new URL(spisokUrlFolder + fileName + archiveExtention);
+			String filePath = downloadFolder + "/" + fileName + archiveExtention;
 			
 			ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
 			FileOutputStream fos = new FileOutputStream(filePath);
@@ -168,18 +169,18 @@ public class UpdateAsfkiFilesJob implements Runnable {
 
 			
 			// Unzip it
-			unzip.unZipIt(filePath, DOWNLOAD_FOLDER);
+			unzip.unZipIt(filePath, downloadFolder);
 			
 			// Convert it
 			List<String> rowAttributesList = new ArrayList<String>();
-			rowAttributesList.add(ROW_ATTRIBUTE);
+			rowAttributesList.add(rowAttribute);
 			List<String> columnAttributesList = new ArrayList<String>();
-			columnAttributesList.add(COLUMN_ATTRIBUTE);
-			File unzipedFile = new File(DOWNLOAD_FOLDER + "/" + fileName + ".xml");
-			Reader reader = new AsfkiReader.Builder(unzipedFile, ROW_TAG, COLUMN_TAG)
+			columnAttributesList.add(columnAttribute);
+			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
+			Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
 			.columnAttributes(columnAttributesList)
-			.bodyRegexFilter(FILTER_REGEX)
-			.rootTag(ROOT_TAG)
+			.bodyRegexFilter(filterRegex)
+			.rootTag(rootTag)
 			.header(true)
 			.build();
 			while(reader.hasNext()) {
@@ -210,8 +211,8 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		for (ASFKI_RowColumn asfkColumn : downloadedList) {
 			SpisokColumn col = new SpisokColumn();
 			col.setBody(asfkColumn.getBody());
-			col.setCor_time(asfkColumn.getAttributes().get(COLUMN_ATTRIBUTE1));
-			col.setFormat(asfkColumn.getAttributes().get(COLUMN_ATTRIBUTE2));
+			col.setCor_time(asfkColumn.getAttributes().get(spisokColumnAttribute1));
+			col.setFormat(asfkColumn.getAttributes().get(spisokColumnAttribute2));
 			spisokColumnList.add(col);
 		}
 		row.setColumn(spisokColumnList);
@@ -221,12 +222,12 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		Marshaller mar = context.createMarshaller();
 		mar.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
 		mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		mar.marshal(root, new File(INPUT_FILE));
-		logger.info(INPUT_FILE + " updated");
+		mar.marshal(root, new File(inputFile));
+		logger.info(inputFile + " updated");
 		
 	}
 	private void clean() {
-		File tempFolder = new File(DOWNLOAD_FOLDER);
+		File tempFolder = new File(downloadFolder);
 		
 		        	List<String> filesInTemp = Arrays.asList(tempFolder.list());
 		        	for (String string : filesInTemp) {
@@ -240,13 +241,64 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		        tempFolder.delete();
 		    }
 
-
+	private void initParams() {
+		List<String> paramsList = new ArrayList<String>();
+		paramsList.add("defaultTime");
+		paramsList.add("inputFile");
+		paramsList.add("filterRegex");
+		paramsList.add("columnTag");
+		paramsList.add("rowTag");
+		paramsList.add("rowAttribute");
+		paramsList.add("columnAttribute");
+		paramsList.add("rootTag");
+		paramsList.add("spisokUrlFolder");
+		paramsList.add("spisokFileName");
+		paramsList.add("downloadFolder");
+		paramsList.add("asfkiDb2Folder");
+		paramsList.add("archiveExtention");
+		paramsList.add("db2lExtention");
+		paramsList.add("spisokColumnAttribute1");
+		paramsList.add("spisokColumnAttribute2");
+		
+		
+		for (String string : paramsList) {
+			String temp = System.getProperty(string);
+			if (temp != null) {
+				try {
+					Field field = this.getClass().getDeclaredField(string);
+					field.setAccessible(true);
+					try {
+						field.set(this, temp);
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} catch (SecurityException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchFieldException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void run() {
 		logger.info("Job started");
+			initParams();
 		try {
-			updateFiles(getListToUpdate());
-			updateList();
+			List<String> list = getListToUpdate();
+			if (list.size() > 0) {
+			updateFiles(list);
+			updateList(); }
+			else {
+				logger.info("Everything is up to date");
+			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

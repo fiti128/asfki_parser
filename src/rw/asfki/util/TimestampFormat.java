@@ -3,7 +3,6 @@ package rw.asfki.util;
 import java.sql.Timestamp;
 import java.text.FieldPosition;
 import java.text.Format;
-import java.text.ParseException;
 import java.text.ParsePosition;
 
 public abstract class TimestampFormat extends Format {
