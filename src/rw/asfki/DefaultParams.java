@@ -17,4 +17,7 @@ public interface DefaultParams {
 	public final static String DEFAULT_DB2L_EXTENTION = ".txt";
 	public final static String DEFAULT_SPISOK_COLUMN_ATTRIBUTE1 = "cor_time";
 	public final static String DEFAULT_SPISOK_COLUMN_ATTRIBUTE2 = "format";
+	public final static String DEFAULT_DB2FILE_DELIMETER = "0x7c";
+	public final static String DEFAULT_ABSOLUTE_PATH_TO_LOG = "D:\\\\itsmylog.txt";
+	public final static String DEFAULT_SCHEMA = "IA00";
 }

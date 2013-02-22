@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -29,6 +31,8 @@ import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
 
 import rw.asfki.domain.ASFKI_RowColumn;
+import rw.asfki.domain.Db2File;
+import rw.asfki.properties.DataSourceFromProperties;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 
@@ -50,6 +54,9 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	private String db2lExtention = DEFAULT_DB2L_EXTENTION;
 	private String spisokColumnAttribute1 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE1;
 	private String spisokColumnAttribute2 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE2;
+	private String absPathToLogFile = DEFAULT_ABSOLUTE_PATH_TO_LOG;
+	private String delimeter = DEFAULT_DB2FILE_DELIMETER;
+	private String schema = DEFAULT_SCHEMA;
 	private static List<ASFKI_RowColumn> downloadedList;
 	
 	private List<String> getListToUpdate() throws IOException {
@@ -135,6 +142,7 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	}
 	
 	private void updateFiles(List<String> list) throws Exception {
+		
 		UnZip unzip = new UnZip();
 		File folder = new File(asfkiDb2Folder);
 		if(!folder.exists()){
@@ -145,14 +153,29 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			sb.append(file).append(" ");
 		}
 		logger.info("Table files to update: " + sb.toString());
+		Db2File dbFile = new Db2File();
+			dbFile.setAbsPathToLogFile(absPathToLogFile);
+			dbFile.setDelimeter(delimeter);
+			dbFile.setSchema(schema);
+		Queue<Db2File> db2Queue = new PriorityBlockingQueue<Db2File>();
+		
+		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
+		db2Task.start();
 		
 		for (String fileName : list) {
 			// Download file
 			String db2FilePath = asfkiDb2Folder + "/" + fileName + db2lExtention;
+			
 			File db2File = new File(db2FilePath);
 			if(!db2File.exists()) {
 				db2File.createNewFile();
 			}
+			String t = db2File.getAbsolutePath();
+			String db2FilePathForLoad = t.replaceAll("\\\\", "\\\\\\\\");
+			Db2File db2f = dbFile.clone();
+			db2f.setAbsPathToFile(db2FilePathForLoad);
+			db2f.setTable(fileName);
+			
 			URL fileUrl = new URL(spisokUrlFolder + fileName + archiveExtention);
 			String filePath = downloadFolder + "/" + fileName + archiveExtention;
 			
@@ -177,12 +200,14 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			List<String> columnAttributesList = new ArrayList<String>();
 			columnAttributesList.add(columnAttribute);
 			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
+			
 			Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
-			.columnAttributes(columnAttributesList)
-			.bodyRegexFilter(filterRegex)
-			.rootTag(rootTag)
-			.header(true)
-			.build();
+				.rowAttributes(rowAttributesList)
+				.columnAttributes(columnAttributesList)
+				.bodyRegexFilter(filterRegex)
+				.rootTag(rootTag)
+				.header(true)
+				.build();
 			while(reader.hasNext()) {
 				List<ASFKI_RowColumn> rowList = reader.next();
 				Db2lWriter writer = new Db2lWriter(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
@@ -199,9 +224,17 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			}
 			reader.close();
 			logger.info(db2File.getAbsolutePath() + " is written");
+			db2Queue.offer(db2f);
+			synchronized(db2Queue) {
+				db2Queue.notify();
+			}
 		}
 		
 	}
+	private void db2load() {
+		
+	}
+	
 	private void updateList() throws JAXBException {
 		
 		Root root = new Root();
@@ -240,51 +273,28 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 
 		        tempFolder.delete();
 		    }
-
+/**
+ * Метод берет имена полей типа <code> String.class </code> этого класса и проверяет, есть ли 
+ * параметры виртуальной машины с таким же именем. Если есть - то присваивает
+ * значение параметра виртуалки.
+ */
 	private void initParams() {
-		List<String> paramsList = new ArrayList<String>();
-		paramsList.add("defaultTime");
-		paramsList.add("inputFile");
-		paramsList.add("filterRegex");
-		paramsList.add("columnTag");
-		paramsList.add("rowTag");
-		paramsList.add("rowAttribute");
-		paramsList.add("columnAttribute");
-		paramsList.add("rootTag");
-		paramsList.add("spisokUrlFolder");
-		paramsList.add("spisokFileName");
-		paramsList.add("downloadFolder");
-		paramsList.add("asfkiDb2Folder");
-		paramsList.add("archiveExtention");
-		paramsList.add("db2lExtention");
-		paramsList.add("spisokColumnAttribute1");
-		paramsList.add("spisokColumnAttribute2");
-		
-		
-		for (String string : paramsList) {
-			String temp = System.getProperty(string);
-			if (temp != null) {
-				try {
-					Field field = this.getClass().getDeclaredField(string);
+		Field[] thisFields = this.getClass().getDeclaredFields();
+		for (Field field : thisFields) {
+			if (field.getType() == String.class) {
+				String temp = System.getProperty(field.getName());
+				if (temp != null) {
 					field.setAccessible(true);
 					try {
 						field.set(this, temp);
-					} catch (IllegalArgumentException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IllegalAccessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					} catch (Exception e) {
+						logger.error("Ошибка при инициализации параметров");
+
 					}
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchFieldException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 		}
+
 	}
 	
 	@Override
