@@ -1,17 +1,17 @@
 package rw.asfki.domain;
 
-public class Db2File implements Cloneable, Comparable<Db2File> {
+public class Db2FileLoadProps implements Cloneable, Comparable<Db2FileLoadProps> {
 	private String absPathToFile;
 	private String delimeter;
 	private String absPathToLogFile;
 	private String schema;
 	private String table;
 
-	public Db2File(){}
+	public Db2FileLoadProps(){}
 	
 	@Override
-	public Db2File clone() throws CloneNotSupportedException {
-		Db2File df = (Db2File) super.clone();
+	public Db2FileLoadProps clone() throws CloneNotSupportedException {
+		Db2FileLoadProps df = (Db2FileLoadProps) super.clone();
 		return df;
 	}
 	
@@ -56,7 +56,7 @@ public class Db2File implements Cloneable, Comparable<Db2File> {
 	}
 
 	@Override
-	public int compareTo(Db2File o) {
+	public int compareTo(Db2FileLoadProps o) {
 		return this.table.compareTo(o.getTable());
 	}
 

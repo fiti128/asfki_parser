@@ -30,8 +30,10 @@ import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
 
+import rw.asfki.dao.DB2Load;
+import rw.asfki.dao.impl.DB2LoadJDBCImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
-import rw.asfki.domain.Db2File;
+import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.properties.DataSourceFromProperties;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
@@ -153,14 +155,15 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			sb.append(file).append(" ");
 		}
 		logger.info("Table files to update: " + sb.toString());
-		Db2File dbFile = new Db2File();
+		Db2FileLoadProps dbFile = new Db2FileLoadProps();
 			dbFile.setAbsPathToLogFile(absPathToLogFile);
 			dbFile.setDelimeter(delimeter);
 			dbFile.setSchema(schema);
-		Queue<Db2File> db2Queue = new PriorityBlockingQueue<Db2File>();
+		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
 		
 		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
-		db2Task.start();
+		DB2Load db2load = new DB2LoadJDBCImpl(new DataSourceFromProperties());
+		db2load.cleanTables(list, schema);
 		
 		for (String fileName : list) {
 			// Download file
@@ -172,7 +175,7 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			}
 			String t = db2File.getAbsolutePath();
 			String db2FilePathForLoad = t.replaceAll("\\\\", "\\\\\\\\");
-			Db2File db2f = dbFile.clone();
+			Db2FileLoadProps db2f = dbFile.clone();
 			db2f.setAbsPathToFile(db2FilePathForLoad);
 			db2f.setTable(fileName);
 			
@@ -228,6 +231,11 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			synchronized(db2Queue) {
 				db2Queue.notify();
 			}
+		}
+		db2Task.start();
+		db2Task.stop();
+		while (db2Task.isAlive()) {
+			Thread.sleep(200);
 		}
 		
 	}

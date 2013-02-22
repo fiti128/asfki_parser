@@ -3,14 +3,16 @@ package rw.asfki.dao.impl;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
+import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 
 import rw.asfki.dao.DB2Load;
-import rw.asfki.domain.Db2File;
+import rw.asfki.domain.Db2FileLoadProps;
 
 public class DB2LoadJDBCImpl implements DB2Load {
 	protected static Logger logger = Logger.getLogger("service");
@@ -57,7 +59,7 @@ public class DB2LoadJDBCImpl implements DB2Load {
 	}
 
 	@Override
-	public void loadFile(Db2File db2File) throws SQLException {
+	public void loadFile(Db2FileLoadProps db2File) throws SQLException {
 		String absPathToFile = db2File.getAbsPathToFile();
 		String delimeter = db2File.getDelimeter();
 		String absPathToLogFile = db2File.getAbsPathToLogFile();
@@ -67,4 +69,28 @@ public class DB2LoadJDBCImpl implements DB2Load {
 		
 	}
 
+	@Override
+	public void cleanTables(List<String> cleanList, String schema) throws SQLException{
+		StringBuilder sb = new StringBuilder();
+		logger.info("Ќачата очистка таблиц");
+		Connection c = dataSource.getConnection();
+		Statement stm = c.createStatement();
+		for (String table : cleanList) {
+			sb.setLength(0);
+			sb.append("alter table ").append(schema).append(".")
+				.append(table).append(" activate not logged initially with empty table");
+			String sql = sb.toString();
+			try {
+				stm.execute(sql);
+				logger.info(schema + "." + table + " очищена");
+			} catch (Exception e) {
+				logger.info(schema + "." + table + " не найдена");
+			}
+		}
+		stm.close();
+		c.close();
+		
+		
+	}
+	
 }
