@@ -13,16 +13,16 @@ import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 
-import rw.asfki.dao.DB2Load;
+import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.domain.Db2FileLoadProps;
 
-public class DB2LoadJDBCImpl implements DB2Load {
+public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
 	private DataSource dataSource;
 	private static String PREPARE_SQL = "CALL SYSPROC.DB2LOAD (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	int a =	1;
 	
-	public DB2LoadJDBCImpl(DataSource dataSource) {
+	public DB2LoadDAOJDBCImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 	

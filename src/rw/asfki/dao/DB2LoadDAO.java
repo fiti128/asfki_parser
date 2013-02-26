@@ -6,7 +6,7 @@ import java.util.Queue;
 
 import rw.asfki.domain.Db2FileLoadProps;
 
-public interface DB2Load {
+public interface DB2LoadDAO {
 	public void loadFile(String absPathToFile, String delimeter,
 			String absPathToLogFile, String schema, String table)
 			throws SQLException;

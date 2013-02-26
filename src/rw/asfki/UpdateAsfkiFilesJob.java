@@ -11,13 +11,13 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -32,8 +32,8 @@ import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
 
-import rw.asfki.dao.DB2Load;
-import rw.asfki.dao.impl.DB2LoadJDBCImpl;
+import rw.asfki.dao.DB2LoadDAO;
+import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.properties.DataSourceFromProperties;
@@ -41,30 +41,43 @@ import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 import rw.asfki.util.UsefulMethods;
 
-public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
+public class UpdateAsfkiFilesJob implements Runnable {
 	protected static Logger logger = Logger.getLogger("service");
-	private String defaultTime = DEFAULT_TIME;
-	private String inputFile = DEFAULT_INPUT_FILE;
-	private String filterRegex = DEFAULT_FILTER_REGEX;
-	private String columnTag = DEFAULT_COLUMN_TAG;
-	private String rowTag = DEFAULT_ROW_TAG;
-	private String rowAttribute = DEFAULT_ROW_ATTRIBUTE;
-	private String columnAttribute = rowAttribute;
-	private String rootTag = DEFAULT_ROW_ATTRIBUTE;
-	private String spisokUrlFolder = DEFAULT_SPISOK_URL_FOLDER;
-	private String spisokFileName = DEFAULT_SPISOK_FILE_NAME;
-	private String downloadFolder = DEFAULT_DOWNLOAD_FOLDER;
-	private String asfkiDb2Folder = DEFAULT_ASFKI_DB2_FOLDER;
-	private String archiveExtention = DEFAULT_ARCHIVE_EXTENTION;
-	private String db2lExtention = DEFAULT_DB2L_EXTENTION;
-	private String spisokColumnAttribute1 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE1;
-	private String spisokColumnAttribute2 = DEFAULT_SPISOK_COLUMN_ATTRIBUTE2;
-	private String absPathToLogFile = DEFAULT_ABSOLUTE_PATH_TO_LOG;
-	private String delimeter = DEFAULT_DB2FILE_DELIMETER;
-	private String schema = DEFAULT_SCHEMA;
-	private static List<ASFKI_RowColumn> downloadedList;
+	private String defaultTime;
+	private String inputFile;
+	private String filterRegex;
+	private String columnTag;
+	private String rowTag;
+	private String rowAttribute;
+	private String columnAttribute;
+	private String rootTag;
+	private String spisokUrlFolder;
+	private String spisokFileName;
+	private String downloadFolder;
+	private String asfkiDb2Folder;
+	private String archiveExtention;
+	private String db2lExtention;
+	private String spisokRootTag;
+	private String spisokRowTag;
+	private String spisokColumnTag;
+	private String spisokColumnAttribute1;
+	private String spisokColumnAttribute2;
+	private String spisokFilterRegex;
+	private String absPathToLogFile;
+	private String delimeter;
+	private String schema;
+	private List<ASFKI_RowColumn> downloadedList;
+	private List<String> rowAttributes = new ArrayList<String>();
+	private List<String> columnAttributes = new ArrayList<String>();
+	private List<String> spisokRowAttributes = new ArrayList<String>();
+	private List<String> spisokColumnAttributes = new ArrayList<String>();
 	
+	public UpdateAsfkiFilesJob() {
+		initParserProperties();
+		initVmParams();
+	}
 	private List<String> getListToUpdate() throws IOException {
+		
 		
 		//Creating folder for temporary files
 		File folder = new File(downloadFolder);
@@ -89,10 +102,10 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			columnAttributesList.add(spisokColumnAttribute1);
 			columnAttributesList.add(spisokColumnAttribute2);
 			
-			Reader reader = new AsfkiReader.Builder(downloadedSpisok, rowTag, columnTag)
-			.columnAttributes(columnAttributesList)
-			.bodyRegexFilter(filterRegex)
-			.rootTag(rootTag)
+			Reader reader = new AsfkiReader.Builder(downloadedSpisok, spisokRowTag, spisokColumnTag)
+			.columnAttributes(spisokColumnAttributes)
+			.bodyRegexFilter(spisokFilterRegex)
+			.rootTag(spisokRootTag)
 			.header(true)
 			.build();
 			
@@ -165,7 +178,7 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
 		
 		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
-		DB2Load db2load = new DB2LoadJDBCImpl(new DataSourceFromProperties());
+		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
 		db2load.cleanTables(list, schema);
 		db2Task.start();
 		for (String fileName : list) {
@@ -208,8 +221,8 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
 			
 			Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
-				.rowAttributes(rowAttributesList)
-				.columnAttributes(columnAttributesList)
+				.rowAttributes(rowAttributes)
+				.columnAttributes(columnAttributes)
 				.bodyRegexFilter(filterRegex)
 				.rootTag(rootTag)
 				.header(true)
@@ -246,9 +259,6 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 		}
 		
 	}
-	private void db2load() {
-		
-	}
 	
 	private void updateList() throws JAXBException {
 		
@@ -274,26 +284,73 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 		logger.info(inputFile + " updated");
 		
 	}
-	private void clean() {
-		File tempFolder = new File(downloadFolder);
+	private void clean(String folder) {
+		File tempFolder = new File(folder);
 		
-		        	List<String> filesInTemp = Arrays.asList(tempFolder.list());
-		        	for (String string : filesInTemp) {
-		        		String pathToDelete = (tempFolder.toString() + "/" +string).trim();
-		        		File phantom = new File(pathToDelete);
-		        		phantom.setWritable(true);
-		        		phantom.delete();
-		        	}
-
-
-		        tempFolder.delete();
+		        	if (tempFolder.isDirectory()) {
+						List<String> filesInTemp = Arrays.asList(tempFolder
+								.list());
+						for (String string : filesInTemp) {
+							String pathToDelete = (tempFolder.toString() + "/" + string)
+									.trim();
+							File phantom = new File(pathToDelete);
+							phantom.setWritable(true);
+							phantom.delete();
+						}
+						tempFolder.delete();
+					}
+		       
 		    }
+	private void initParserProperties() {
+		Properties props = null;
+		String configName = "parser.properties";
+		try {
+			props = UsefulMethods.loadProperties(configName);
+		} catch (IOException e1) {
+			logger.error("Не смог прочитать файл с настройками: " + configName );
+		}
+		Field[] thisFields = this.getClass().getDeclaredFields();
+		for (Field field : thisFields) {
+			if (field.getType() == String.class) {
+				String temp = props.getProperty(field.getName());
+				if (temp != null) {
+					field.setAccessible(true);
+					try {
+						field.set(this, temp);
+					} catch (Exception e) {
+						logger.error("Ошибка при инициализации параметров");
+
+					}
+				}
+			}
+		}
+		initAttributes(props, "rowAttribute", rowAttributes);
+		initAttributes(props, "columnAttribute", columnAttributes);
+		initAttributes(props, "spisokRowAttribute", spisokRowAttributes);
+		initAttributes(props, "spisokColumnAttribute", spisokColumnAttributes);
+		
+	}
+private void initAttributes(Properties props, String attributeTarget, List<String> attributesList) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i <= 10; i++) {
+			sb.setLength(0);
+			sb.append(attributeTarget);
+			if (i != 0) sb.append(String.valueOf(i));
+			String param = sb.toString();
+			String attribute;
+			if ((attribute = props.getProperty(param)) != null) {
+				attributesList.add(attribute);
+			}
+		}
+		
+		
+	}
 /**
  * Метод берет имена полей типа <code> String.class </code> этого класса и проверяет, есть ли 
  * параметры виртуальной машины с таким же именем. Если есть - то присваивает
  * значение параметра виртуалки.
  */
-	private void initParams() {
+	private void initVmParams() {
 		Field[] thisFields = this.getClass().getDeclaredFields();
 		for (Field field : thisFields) {
 			if (field.getType() == String.class) {
@@ -316,14 +373,13 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	public void run() {
 		logger.info("Начало работы");
 		Date startTime = new Date();
-			initParams();
 		try {
 			List<String> list = getListToUpdate();
 			if (list.size() > 0) {
 			updateFiles(list);
 			updateList(); }
 			else {
-				logger.info("Everything is up to date");
+				logger.info("Все обновленно");
 			}
 			
 		} catch (IOException e) {
@@ -334,7 +390,8 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			e.printStackTrace();
 		}
 		finally {
-			clean();
+			clean(downloadFolder);
+			clean(asfkiDb2Folder);
 		
 		}
 		Date endTime = new Date();

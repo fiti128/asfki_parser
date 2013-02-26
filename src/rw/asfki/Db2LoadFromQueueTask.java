@@ -8,19 +8,19 @@ import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 import rw.asfki.domain.*;
-import rw.asfki.dao.DB2Load;
-import rw.asfki.dao.impl.DB2LoadJDBCImpl;
+import rw.asfki.dao.DB2LoadDAO;
+import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
 
 public class Db2LoadFromQueueTask implements Runnable {
 	protected static Logger logger = Logger.getLogger("service");
 	private Queue<Db2FileLoadProps> queue;
 	private volatile Thread thisThread;
-	private DB2Load db2load;
+	private DB2LoadDAO db2load;
 	private volatile boolean stopFlag;
 
 	Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, DataSource dataSource) {
 		this.queue = queue;
-		this.db2load = new DB2LoadJDBCImpl(dataSource);
+		this.db2load = new DB2LoadDAOJDBCImpl(dataSource);
 	}
 	public boolean isAlive() {
 		return thisThread.isAlive();

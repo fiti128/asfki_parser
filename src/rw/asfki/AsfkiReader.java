@@ -145,9 +145,6 @@ public class AsfkiReader implements Reader {
 				}
 				String colNext = columnScanner.next();
 				
-				if (bodyRegexFilter != null) {
-					colNext = colNext.replaceAll(bodyRegexFilter, "");
-				}
 				
 				Map<String, String> map = new HashMap<String,String>();
 					for (String attribute : columnAttributes) {
@@ -162,6 +159,9 @@ public class AsfkiReader implements Reader {
 					}
 					int bodyIndex = colNext.indexOf(">") + 1;
 					String body = colNext.substring(bodyIndex);
+					if (bodyRegexFilter != null) {
+						body = body.replaceAll(bodyRegexFilter, "");
+					}
 					body = body.trim();
 					ASFKI_RowColumn rowColumn = new ASFKI_RowColumn();
 					rowColumn.setAttributes(map);
