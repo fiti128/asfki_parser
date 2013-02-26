@@ -22,7 +22,7 @@ public class Db2lWriter extends Writer {
 		this.columnDelimeter = columnDelimeter;
 	}
 
-	public void write(List<String> stringList) throws Exception {
+	public void writeLine(List<String> stringList) throws Exception {
 		if (stringList == null | stringList.size() == 0) throw new Exception("No data to write");
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < stringList.size() - 1; i++) {

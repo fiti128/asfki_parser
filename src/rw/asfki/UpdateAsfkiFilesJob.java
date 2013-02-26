@@ -11,8 +11,10 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.properties.DataSourceFromProperties;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
+import rw.asfki.util.UsefulMethods;
 
 public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	protected static Logger logger = Logger.getLogger("service");
@@ -164,7 +167,7 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
 		DB2Load db2load = new DB2LoadJDBCImpl(new DataSourceFromProperties());
 		db2load.cleanTables(list, schema);
-		
+		db2Task.start();
 		for (String fileName : list) {
 			// Download file
 			String db2FilePath = asfkiDb2Folder + "/" + fileName + db2lExtention;
@@ -220,19 +223,23 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 						bodyList.add(body);
 					}
 
-				writer.write(bodyList);
+				writer.writeLine(bodyList);
 				writer.flush();
 				writer.close();
 			
 			}
 			reader.close();
-			logger.info(db2File.getAbsolutePath() + " is written");
+			logger.info(db2File.getAbsolutePath() + " сконвертирован");
+			logger.info("Oсталось файлов: " + (list.size() - list.indexOf(fileName)-1) + " из " + list.size());
 			db2Queue.offer(db2f);
 			synchronized(db2Queue) {
 				db2Queue.notify();
 			}
 		}
-		db2Task.start();
+//		DB2Load dao = new DB2LoadJDBCImpl(new DataSourceFromProperties());
+//		dao.loadFromQueue(db2Queue);
+		
+
 		db2Task.stop();
 		while (db2Task.isAlive()) {
 			Thread.sleep(200);
@@ -307,7 +314,8 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 	
 	@Override
 	public void run() {
-		logger.info("Job started");
+		logger.info("Начало работы");
+		Date startTime = new Date();
 			initParams();
 		try {
 			List<String> list = getListToUpdate();
@@ -329,8 +337,11 @@ public class UpdateAsfkiFilesJob implements Runnable, DefaultParams {
 			clean();
 		
 		}
-		logger.info("End of job");
-
+		Date endTime = new Date();
+		long jobTime = endTime.getTime() - startTime.getTime();
+		String jobPrettyTime = UsefulMethods.millisToLongDHMS(jobTime);
+		logger.info("Конец работы");
+		logger.info("Затраченно времени: " + jobPrettyTime);
 	}
 	public static void main(String[] args) {
 		new Thread(new UpdateAsfkiFilesJob()).start();

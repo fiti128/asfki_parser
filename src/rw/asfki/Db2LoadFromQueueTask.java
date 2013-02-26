@@ -41,7 +41,7 @@ public class Db2LoadFromQueueTask implements Runnable {
 			}
 
 			try {
-				db2load.loadFile(queue.poll());
+				db2load.loadFromQueue(queue);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -51,6 +51,7 @@ public class Db2LoadFromQueueTask implements Runnable {
 	public void start() {
 		thisThread = new Thread(this);
 		thisThread.setName("Pasha privet");
+		thisThread.setDaemon(false);
 		thisThread.start();
 
 	}
