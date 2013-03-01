@@ -174,7 +174,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		}
 		
 	}
-	private void createFolder(String downloadFolder2) {
+	private void createFolder(String downloadFolder) {
 		File folder = new File(downloadFolder);
 		if(!folder.isDirectory()){
 			folder.mkdirs();
@@ -184,6 +184,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private void updateTables(List<String> list) throws Exception {
 		
 		UnZip unzip = new UnZip();
+		
 		
 		createFolder(asfkiDb2Folder);
 		
@@ -206,7 +207,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
 		db2load.cleanTables(list, schema);
 		db2Task.start();
-		createFolder(asfkiDb2Folder);
+//		createFolder(asfkiDb2Folder);
 		
 		
 		for (String fileName : list) {

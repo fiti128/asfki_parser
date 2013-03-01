@@ -6,6 +6,7 @@
  */
 package rw.asfki.util;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -86,6 +87,7 @@ public class UsefulMethods {
 	public static Properties loadProperties(String name) throws IOException {
 		Properties prop = new Properties();
 		InputStream inputStream = null;
+			System.out.println(new File(name).getAbsolutePath());
 		
 		// Сперва программа читает внешний файл
 		try {
@@ -95,7 +97,7 @@ public class UsefulMethods {
 		}
 		// Если там ничего, то внутренний
 		if (inputStream == null)
-			inputStream = prop.getClass().getResourceAsStream(name);
+			inputStream = UsefulMethods.class.getResourceAsStream("/" + name);
 
 		prop.load(inputStream);
 		if (inputStream != null)
