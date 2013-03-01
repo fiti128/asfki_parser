@@ -1,3 +1,9 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki;
 
 import java.io.BufferedWriter;
@@ -7,7 +13,14 @@ import java.util.List;
 
 
 import rw.asfki.domain.ASFKI_RowColumn;
-
+/**
+ * Класс для создания файлов, пригодных для загрузки в дб2
+ *  
+ * @author Yanusheusky S.
+ * @since 27.02.2013
+ * @see #writeLine(List)
+ *
+ */
 public class Db2lWriter extends Writer {
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
@@ -21,7 +34,13 @@ public class Db2lWriter extends Writer {
 		this.bw = bw;
 		this.columnDelimeter = columnDelimeter;
 	}
-
+/**
+ *  Из листа пишет одну строчку в файл. Строчка в файле соответствует записи(строчки) 
+ *  в базе данных.
+ *  
+ * @param stringList
+ * @throws Exception
+ */
 	public void writeLine(List<String> stringList) throws Exception {
 		if (stringList == null | stringList.size() == 0) throw new Exception("No data to write");
 		StringBuilder sb = new StringBuilder();
@@ -49,6 +68,11 @@ public class Db2lWriter extends Writer {
 		bw.newLine();
 		
 	}
+/**
+ * 
+ * @param list
+ * @throws Exception
+ */
 	public void writeDomain(List<ASFKI_RowColumn> list) throws Exception {
 		if (list == null | list.size() == 0) throw new Exception("No data to write");
 		StringBuilder sb = new StringBuilder();

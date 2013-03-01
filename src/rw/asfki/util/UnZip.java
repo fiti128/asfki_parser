@@ -1,3 +1,9 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki.util;
 
 import java.io.File;
@@ -7,7 +13,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
- 
+ /**
+  *  Класс отвечающий за работу с архивами. 
+  *  <p> На данный момент реализованно только разархивирование.
+  * @author Yanusheusky S.
+  * @since 21.02.2013
+  *
+  */
 public class UnZip
 {
     List<String> fileList;

@@ -1,8 +1,14 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki;
-
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,7 +46,14 @@ import rw.asfki.properties.DataSourceFromProperties;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 import rw.asfki.util.UsefulMethods;
-
+/**
+ * Класс объединяющий все операции для выполнения одной задачи - 
+ * обновить ASFKI таблицы.
+ * 
+ * @author Yanusheusky S.
+ * @since 27.02.2013
+ *
+ */
 public class UpdateAsfkiFilesJob implements Runnable {
 	protected static Logger logger = Logger.getLogger("service");
 	private String defaultTime;
@@ -78,35 +91,20 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	}
 	private List<String> getListToUpdate() throws IOException {
 		
+			// Creating folder for temporary files
+		  createFolder(downloadFolder);
 		
-		//Creating folder for temporary files
-		File folder = new File(downloadFolder);
-		if(!folder.exists()){
-			folder.mkdir();
-		}
-		
-		//Downloading spisok
+			// Download spisok
 		  URL fileUrl = new URL(spisokUrlFolder + spisokFileName);
-		  ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
 		  File downloadedSpisok = new File(downloadFolder + "/" + spisokFileName);
-		  FileOutputStream fos = new FileOutputStream(downloadedSpisok);
-		  fos.getChannel().transferFrom(rbc, 0, 1 << 24);
-		  fos.flush();
-		  fos.close();
-		  fos = null;
-		  System.gc();
+		  downloadFile(fileUrl, downloadedSpisok);
 		  
-		 // Initializing reader for downloaded file
-
-			List<String> columnAttributesList = new ArrayList<String>();
-			columnAttributesList.add(spisokColumnAttribute1);
-			columnAttributesList.add(spisokColumnAttribute2);
-			
+		    // Initializing reader for downloaded file
 			Reader reader = new AsfkiReader.Builder(downloadedSpisok, spisokRowTag, spisokColumnTag)
+			.rowAttributes(spisokRowAttributes)
 			.columnAttributes(spisokColumnAttributes)
 			.bodyRegexFilter(spisokFilterRegex)
 			.rootTag(spisokRootTag)
-			.header(true)
 			.build();
 			
 			// Read file
@@ -125,6 +123,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				newMap.put(key, value);
 				listToCompare.add(key);
 			}
+			
 			// Read old data list from xml
 			List<SpisokColumn> spisokColumnlist;
 			try {
@@ -135,6 +134,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			} catch (JAXBException e) {
 				spisokColumnlist = new ArrayList<SpisokColumn>(0);
 				}
+			
 			// Parse old data to map
 			Map<String, Timestamp> oldMap = new HashMap<String, Timestamp> ();
 			for (SpisokColumn spisokColumn : spisokColumnlist) {
@@ -145,6 +145,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				Timestamp value = stf.parse(correctionTime);
 				oldMap.put(key, value);
 			}
+			
 			// Creating update list
 			Timestamp defaultTs = Timestamp.valueOf(defaultTime);
 			List<String> listToUpdate = new ArrayList<String>();
@@ -159,74 +160,89 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		return listToUpdate;
 	}
 	
-	private void updateFiles(List<String> list) throws Exception {
+	private void downloadFile(URL fileUrl, File downloadedSpisok) {
+		  try {
+			  ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
+			  FileOutputStream fos = new FileOutputStream(downloadedSpisok);
+			  fos.getChannel().transferFrom(rbc, 0, 1 << 24);
+			  fos.flush();
+			  fos.close();
+			  fos = null;
+			  System.gc();
+		} catch (IOException e) {
+			logger.error("Не смог скачать файл со списком");
+		}
+		
+	}
+	private void createFolder(String downloadFolder2) {
+		File folder = new File(downloadFolder);
+		if(!folder.isDirectory()){
+			folder.mkdirs();
+		}
+		
+	}
+	private void updateTables(List<String> list) throws Exception {
 		
 		UnZip unzip = new UnZip();
-		File folder = new File(asfkiDb2Folder);
-		if(!folder.exists()){
-			folder.mkdir();
-		}
+		
+		createFolder(asfkiDb2Folder);
+		
 		StringBuilder sb = new StringBuilder();
 		for (String file : list) {
 			sb.append(file).append(" ");
 		}
+		// Показать в логе список таблиц, требующих обновления
 		logger.info("Table files to update: " + sb.toString());
-		Db2FileLoadProps dbFile = new Db2FileLoadProps();
-			dbFile.setAbsPathToLogFile(absPathToLogFile);
-			dbFile.setDelimeter(delimeter);
-			dbFile.setSchema(schema);
+		
+		// 
+		Db2FileLoadProps dbFileBaseProperties = new Db2FileLoadProps();
+			dbFileBaseProperties.setAbsPathToLogFile(absPathToLogFile);
+			dbFileBaseProperties.setDelimeter(delimeter);
+			dbFileBaseProperties.setSchema(schema);
+			
 		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
 		
 		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
 		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
 		db2load.cleanTables(list, schema);
 		db2Task.start();
+		createFolder(asfkiDb2Folder);
+		
+		
 		for (String fileName : list) {
-			// Download file
+			
 			String db2FilePath = asfkiDb2Folder + "/" + fileName + db2lExtention;
+			File db2File = createFile(db2FilePath);
 			
-			File db2File = new File(db2FilePath);
-			if(!db2File.exists()) {
-				db2File.createNewFile();
-			}
-			String t = db2File.getAbsolutePath();
-			String db2FilePathForLoad = t.replaceAll("\\\\", "\\\\\\\\");
-			Db2FileLoadProps db2f = dbFile.clone();
-			db2f.setAbsPathToFile(db2FilePathForLoad);
-			db2f.setTable(fileName);
+			// Create db2load properties for the file
+			String absolutePath = db2File.getAbsolutePath();
+			String db2FilePathForLoad = absolutePath.replaceAll("\\\\", "\\\\\\\\");
+			Db2FileLoadProps db2fProperties = dbFileBaseProperties.clone();
+			db2fProperties.setAbsPathToFile(db2FilePathForLoad);
+			db2fProperties.setTable(fileName);
 			
+			// Download file
 			URL fileUrl = new URL(spisokUrlFolder + fileName + archiveExtention);
 			String filePath = downloadFolder + "/" + fileName + archiveExtention;
-			
-			ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
-			FileOutputStream fos = new FileOutputStream(filePath);
-			fos.getChannel().transferFrom(rbc, 0, 1 << 24);
-			  fos.flush();
-			  fos.close();
-			  fos = null;
-			  System.gc();
-			
-//			File newFile = new File(filePath);
-	
-
+			File file = new File(filePath);
+					
+			downloadFile(fileUrl, file);
 			
 			// Unzip it
 			unzip.unZipIt(filePath, downloadFolder);
 			
 			// Convert it
-			List<String> rowAttributesList = new ArrayList<String>();
-			rowAttributesList.add(rowAttribute);
-			List<String> columnAttributesList = new ArrayList<String>();
-			columnAttributesList.add(columnAttribute);
 			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
 			
+			// Initializing
 			Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
 				.rowAttributes(rowAttributes)
 				.columnAttributes(columnAttributes)
 				.bodyRegexFilter(filterRegex)
 				.rootTag(rootTag)
-				.header(true)
 				.build();
+			
+			// Read and write
 			while(reader.hasNext()) {
 				List<ASFKI_RowColumn> rowList = reader.next();
 				Db2lWriter writer = new Db2lWriter(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
@@ -244,22 +260,36 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			reader.close();
 			logger.info(db2File.getAbsolutePath() + " сконвертирован");
 			logger.info("Oсталось файлов: " + (list.size() - list.indexOf(fileName)-1) + " из " + list.size());
-			db2Queue.offer(db2f);
+			// Offer to list complete details to load this file to db
+			db2Queue.offer(db2fProperties);
+			// Notifying another threads of new element in the queue
 			synchronized(db2Queue) {
 				db2Queue.notify();
 			}
-		}
-//		DB2Load dao = new DB2LoadJDBCImpl(new DataSourceFromProperties());
-//		dao.loadFromQueue(db2Queue);
+		} // end of list
 		
-
+		
 		db2Task.stop();
+		// Just to handle bug of terminating jvm without waiting all threads end their work
 		while (db2Task.isAlive()) {
 			Thread.sleep(200);
 		}
 		
 	}
 	
+	private File createFile(String path) {
+		File file = new File(path);
+		System.out.println(file.getAbsolutePath());
+		if(!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				logger.error("Не удалось создать файл с путем " + path);
+				e.printStackTrace();
+			}
+		}
+		return file;
+	}
 	private void updateList() throws JAXBException {
 		
 		Root root = new Root();
@@ -372,21 +402,19 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	@Override
 	public void run() {
 		logger.info("Начало работы");
+		clean(downloadFolder);
+		clean(asfkiDb2Folder);
+		
 		Date startTime = new Date();
 		try {
 			List<String> list = getListToUpdate();
 			if (list.size() > 0) {
-			updateFiles(list);
+			updateTables(list);
 			updateList(); }
 			else {
 				logger.info("Все обновленно");
 			}
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			} catch (Exception e) {
 			e.printStackTrace();
 		}
 		finally {
@@ -397,6 +425,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		Date endTime = new Date();
 		long jobTime = endTime.getTime() - startTime.getTime();
 		String jobPrettyTime = UsefulMethods.millisToLongDHMS(jobTime);
+		
 		logger.info("Конец работы");
 		logger.info("Затраченно времени: " + jobPrettyTime);
 	}

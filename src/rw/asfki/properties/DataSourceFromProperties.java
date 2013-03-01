@@ -1,3 +1,9 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki.properties;
 
 import java.io.PrintWriter;
@@ -11,7 +17,16 @@ import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 import rw.asfki.util.UsefulMethods;
-
+/**
+ * Класс отвечает за настройку 
+ * соединения с базой данных. Все данные беруться из
+ * соответствующего файла с пропертей. 
+ * <p>Реализован только <p> <code> getConnection() <code>
+ * <p> Остальные методы не делают ничего
+ * @author Yanusheusky S.
+ * @since 27.02.2013
+ * 
+ */
 public class DataSourceFromProperties implements DataSource {
 	protected static Logger logger = Logger.getLogger("service");
 	private String username;

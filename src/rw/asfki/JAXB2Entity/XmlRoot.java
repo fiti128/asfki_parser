@@ -1,3 +1,10 @@
+
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki.JAXB2Entity;
 
 import java.util.ArrayList;
@@ -6,10 +13,12 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
-
 /**
- * Main domain class. Root for all xml files
+ * Jaxb2 Root для всех ASFKI файлов, если захотим 
+ * использовать SAX и JAXB2. Класс уже рабочий - файлы саксом читаются.
+ * Сделано на будущее, если на внешние файлы дадут гарантию их соответствию 
+ * xml стандартам.
+ * 
  * @author ircm_yanusheusky
  * @since 15.01.2013
  */
