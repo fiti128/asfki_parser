@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.apache.log4j.Logger;
  /**
   *  Класс отвечающий за работу с архивами. 
   *  <p> На данный момент реализованно только разархивирование.
@@ -22,6 +24,7 @@ import java.util.zip.ZipInputStream;
   */
 public class UnZip
 {
+	Logger logger = Logger.getLogger("service");
     List<String> fileList;
  
 
@@ -29,10 +32,11 @@ public class UnZip
      * Unzip it
      * @param zipFile input zip file
      * @param output zip file output folder
+     * @throws IOException 
      */
-    public void unZipIt(String zipFile, String outputFolder){
- 
-     byte[] buffer = new byte[1024];
+    public void unZipIt(String zipFile, String outputFolder) throws IOException{
+     int BUFFER = 1024;
+     byte[] buffer = new byte[BUFFER];
  
      try{
  
@@ -49,7 +53,7 @@ public class UnZip
     	ZipEntry ze = zis.getNextEntry();
  
     	while(ze!=null){
- 
+    	
     	   String fileName = ze.getName();
            File newFile = new File(outputFolder + File.separator + fileName);
  
@@ -61,7 +65,7 @@ public class UnZip
             FileOutputStream fos = new FileOutputStream(newFile);             
  
             int len;
-            while ((len = zis.read(buffer)) > 0) {
+            while ((len = zis.read(buffer,0,BUFFER)) != -1) {
        		fos.write(buffer, 0, len);
             }
  
@@ -74,7 +78,8 @@ public class UnZip
  
   
     }catch(IOException ex){
-       ex.printStackTrace(); 
+    logger.error("Failed unziping " + zipFile);
+       throw ex; 
     }
    }    
 }

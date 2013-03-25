@@ -8,11 +8,11 @@ package rw.asfki;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -61,8 +61,6 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String filterRegex;
 	private String columnTag;
 	private String rowTag;
-	private String rowAttribute;
-	private String columnAttribute;
 	private String rootTag;
 	private String spisokUrlFolder;
 	private String spisokFileName;
@@ -160,7 +158,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		return listToUpdate;
 	}
 	
-	private void downloadFile(URL fileUrl, File downloadedSpisok) {
+	private void downloadFile(URL fileUrl, File downloadedSpisok) throws IOException {
 		  try {
 			  ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
 			  FileOutputStream fos = new FileOutputStream(downloadedSpisok);
@@ -170,7 +168,8 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			  fos = null;
 			  System.gc();
 		} catch (IOException e) {
-			logger.error("Не смог скачать файл со списком");
+			logger.error("Не смог скачать файл " + fileUrl.toString());
+			throw e;
 		}
 		
 	}
@@ -399,28 +398,89 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		}
 
 	}
-	
+	private Db2FileLoadProps downloadUnzipCovert(String fileName) throws Exception {
+		Db2FileLoadProps dbFileBaseProperties = new Db2FileLoadProps();
+		dbFileBaseProperties.setAbsPathToLogFile(absPathToLogFile);
+		dbFileBaseProperties.setDelimeter(delimeter);
+		dbFileBaseProperties.setSchema(schema);
+		String db2FilePath = asfkiDb2Folder + "/" + fileName + db2lExtention;
+		File db2File = createFile(db2FilePath);
+		
+		// Create db2load properties for the file
+		String absolutePath = db2File.getAbsolutePath();
+		String db2FilePathForLoad = absolutePath.replaceAll("\\\\", "\\\\\\\\");
+		Db2FileLoadProps db2fProperties = dbFileBaseProperties.clone();
+		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
+		db2fProperties.setTable(fileName);
+		
+		// Download file
+		URL fileUrl = new URL(spisokUrlFolder + fileName + archiveExtention);
+		String filePath = downloadFolder + "/" + fileName + archiveExtention;
+		File file = new File(filePath);
+				
+		downloadFile(fileUrl, file);
+		UnZip unzip = new UnZip();
+		// Unzip it
+		unzip.unZipIt(filePath, downloadFolder);
+		
+		// Convert it
+		File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
+		
+		// Initializing
+		Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
+			.rowAttributes(rowAttributes)
+			.columnAttributes(columnAttributes)
+			.bodyRegexFilter(filterRegex)
+			.rootTag(rootTag)
+			.build();
+		
+		// Read and write
+		while(reader.hasNext()) {
+			List<ASFKI_RowColumn> rowList = reader.next();
+			Db2lWriter writer = new Db2lWriter(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
+			List<String> bodyList = new ArrayList<String>();
+				for (ASFKI_RowColumn column : rowList) {
+					String body = column.getBody();
+					bodyList.add(body);
+				}
+
+			writer.writeLine(bodyList);
+			writer.flush();
+			writer.close();
+		
+		}
+		reader.close();
+		logger.info(db2File.getAbsolutePath() + " сконвертирован");
+		return dbFileBaseProperties;
+	}
 	@Override
 	public void run() {
 		logger.info("Начало работы");
 		clean(downloadFolder);
 		clean(asfkiDb2Folder);
-		
+		createFolder(asfkiDb2Folder);
+		createFolder(downloadFolder);
 		Date startTime = new Date();
 		try {
-			List<String> list = getListToUpdate();
-			if (list.size() > 0) {
-			updateTables(list);
-			updateList(); }
-			else {
-				logger.info("Все обновленно");
-			}
+//			List<String> list = getListToUpdate();
+//			if (list.size() > 0) {
+//			updateTables(list);
+//			updateList(); }
+//			else {
+//				logger.info("Все обновленно");
+//			}
+//			} catch (Exception e) {
+//			e.printStackTrace();
+			try {
+				downloadUnzipCovert("ABD_VP_GR");
 			} catch (Exception e) {
-			e.printStackTrace();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		finally {
 			clean(downloadFolder);
-			clean(asfkiDb2Folder);
+//			clean(asfkiDb2Folder);
 		
 		}
 		Date endTime = new Date();
