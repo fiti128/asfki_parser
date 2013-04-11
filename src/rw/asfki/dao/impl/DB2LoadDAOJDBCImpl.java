@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
@@ -162,8 +163,22 @@ public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 			String loadCommand = sb.toString();
 			pstm.setString(3, loadCommand);
 			logger.info(table + " start loading");
-			pstm.execute();
+			SQLWarning warning = pstm.getWarnings();
+			if (warning !=null) System.out.println("Before execute warning");
+			boolean isProcesed = pstm.execute();
+			if (!isProcesed) System.out.println("Boom at" + table);
+			warning = pstm.getWarnings();
+			
+		    while (warning != null) {
+		        System.out.println("Message: " + warning.getMessage());
+		        System.out.println("SQLState: " + warning.getSQLState());
+		        System.out.print("Vendor error code: ");
+		        System.out.println(warning.getErrorCode());
+		        System.out.println("");
+		        warning = warning.getNextWarning();
+		    }
 			logger.info(table + " end loading");
+			
 			
 		}
 		pstm.close();

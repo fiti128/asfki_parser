@@ -19,6 +19,7 @@ public class AsfkiHandler extends DefaultHandler {
 	private AsfkiHandler(Db2Writer writer, String rowTag) {
 		super();
 		this.writer = writer;
+		this.rowTag = rowTag.intern();
 	}
 	public static AsfkiHandler getInstance(Db2Writer writer,String rowTag) {
 		return new AsfkiHandler(writer,rowTag);
@@ -36,17 +37,17 @@ public class AsfkiHandler extends DefaultHandler {
 
 		public void endElement (String uri, String name, String qName)
 		{
-			if(qName.equals(rowTag)){
+			if(qName == rowTag){
 				
 						try {
 							writer.writeLine(list);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						for (String string : list) {
-							System.out.print(string);
-						}
-					System.out.println();
+//						for (String string : list) {
+//							System.out.print(string);
+//						}
+//					System.out.println();
 					}
 		}
 

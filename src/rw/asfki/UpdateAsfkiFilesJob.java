@@ -8,9 +8,11 @@ package rw.asfki;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,6 +35,9 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
@@ -42,10 +47,13 @@ import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.filters.AsfkiFilter;
 import rw.asfki.properties.DataSourceFromProperties;
+import rw.asfki.sax.AsfkiHandler;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 import rw.asfki.util.UsefulMethods;
+
 /**
  * Класс объединяющий все операции для выполнения одной задачи - 
  * обновить ASFKI таблицы.
@@ -207,7 +215,10 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		db2load.cleanTables(list, schema);
 		db2Task.start();
 //		createFolder(asfkiDb2Folder);
-		
+		XMLReader xr;
+		Db2Writer writer;
+		AsfkiHandler asfkiHandler;
+		InputSource is;
 		
 		for (String fileName : list) {
 			
@@ -235,29 +246,18 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
 			
 			// Initializing
-			Reader reader = new AsfkiReader.Builder(unzipedFile, rowTag, columnTag)
-				.rowAttributes(rowAttributes)
-				.columnAttributes(columnAttributes)
-				.bodyRegexFilter(filterRegex)
-				.rootTag(rootTag)
-				.build();
+			xr = XMLReaderFactory.createXMLReader();
+			writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
+			asfkiHandler = AsfkiHandler.getInstance(writer, rowTag);
+			xr.setContentHandler(asfkiHandler);
+			is = new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
 			
-			// Read and write
-			while(reader.hasNext()) {
-				List<ASFKI_RowColumn> rowList = reader.next();
-				Db2lWriter writer = new Db2lWriter(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
-				List<String> bodyList = new ArrayList<String>();
-					for (ASFKI_RowColumn column : rowList) {
-						String body = column.getBody();
-						bodyList.add(body);
-					}
-
-				writer.writeLine(bodyList);
-				writer.flush();
-				writer.close();
+			// Converting
+			xr.parse(is);
+			writer.flush();
+			writer.close();
 			
-			}
-			reader.close();
+			
 			logger.info(db2File.getAbsolutePath() + " сконвертирован");
 			logger.info("Oсталось файлов: " + (list.size() - list.indexOf(fileName)-1) + " из " + list.size());
 			// Offer to list complete details to load this file to db
@@ -462,21 +462,21 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		createFolder(downloadFolder);
 		Date startTime = new Date();
 		try {
-//			List<String> list = getListToUpdate();
-//			if (list.size() > 0) {
-//			updateTables(list);
-//			updateList(); }
-//			else {
-//				logger.info("Все обновленно");
-//			}
-//			} catch (Exception e) {
-//			e.printStackTrace();
-			try {
-				downloadUnzipCovert("ABD_VP_GR");
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			List<String> list = getListToUpdate();
+			if (list.size() > 0) {
+			updateTables(list);
+			updateList(); }
+			else {
+				logger.info("Все обновленно");
 			}
+			} catch (Exception e) {
+			e.printStackTrace();
+//			try {
+//				downloadUnzipCovert("ABD_VP_GR");
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		}
 		finally {
 			clean(downloadFolder);
@@ -490,7 +490,23 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		logger.info("Конец работы");
 		logger.info("Затраченно времени: " + jobPrettyTime);
 	}
+	
+	
+	public void setRowTag(String rowTag) {
+		this.rowTag = rowTag;
+	}
 	public static void main(String[] args) {
-		new Thread(new UpdateAsfkiFilesJob()).start();
+		if (args.length == 0) {
+		new UpdateAsfkiFilesJob().run();
+		}
+		else {
+			UpdateAsfkiFilesJob job = new UpdateAsfkiFilesJob();
+			job.setRowTag(System.getProperty("rowTag"));
+			
+			for (String string : args) {
+				
+			}
+			
+		}
 	}
 }
