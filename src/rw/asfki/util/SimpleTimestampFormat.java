@@ -1,3 +1,9 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki.util;
 
 import java.sql.Timestamp;
@@ -8,6 +14,15 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Класс создан по аналогии с SimpleDateFormat,
+ * но для работы с Timestamp. 
+ * Методы должны работать соответствующе.
+ * 
+ * @author Yanusheusky S.
+ * @since 27.02.2013
+ *
+ */
 public class SimpleTimestampFormat extends TimestampFormat {
 	
 	private String timestampPattern;
