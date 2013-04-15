@@ -44,9 +44,10 @@ public interface DB2LoadDAO {
 	 * @param cleanList
 	 * @param schema
 	 * @throws SQLException
+	 * @throws Exception 
 	 */
 	public void cleanTables(List<String> cleanList, String schema)
-			throws SQLException;
+			throws Exception;
 	
 	/**
 	 * Загружает группу файлов, используя очередь с настройками для загрузки по каждому файлу

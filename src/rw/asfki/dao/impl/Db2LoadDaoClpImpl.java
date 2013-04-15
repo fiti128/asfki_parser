@@ -20,7 +20,7 @@ import rw.asfki.domain.Db2FileLoadProps;
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
 	private String batchFileName = "db2script.bat";
-	private String loadScriptFileName = "loadscript.db2";
+	private String scriptFileName = "script.db2";
 	private ProcessBuilder processBuilder;
 	private Properties db2properties;
 	
@@ -29,7 +29,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		this.db2properties = props;
 		File batchFile = new File(batchFileName);
 		FileWriter fw = new FileWriter(batchFile,false);
-		fw.write("db2 +c -tf \"loadScriptFileName\"");
+		fw.write("db2 +c -tf \"" +scriptFileName+"\"");
 		fw.close();
 		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i",batchFileName);
 		processBuilder.directory(batchFile.getParentFile());
@@ -53,8 +53,35 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 
 	@Override
 	public void cleanTables(List<String> cleanList, String schema)
-			throws SQLException {
-		// TODO Auto-generated method stub
+			throws Exception {
+		StringBuilder sb = new StringBuilder();
+		String databaseName = db2properties.getProperty("database");
+		String userName = db2properties.getProperty("user");
+		String password = db2properties.getProperty("database");
+		sb.append("CONNECT TO ").append(databaseName).append(" USER ")
+			.append(userName).append(" USING ").append(password).append(";");
+		String connectCommand = sb.toString();
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(scriptFileName),false));
+		bw.write(connectCommand);
+		
+		
+		
+		for (String table : cleanList) {
+			sb.setLength(0);
+			sb.append("alter table ").append(schema).append(".")
+				.append(table).append(" activate not logged initially with empty table").append(";");
+			String alterTable = sb.toString();
+			bw.newLine();
+			bw.write(alterTable);
+			
+				Process process = processBuilder.start();
+				int errorlevel = process.exitValue();
+				if (errorlevel == 0) {
+				 logger.info(schema + "." + table + " очищена");
+				} else {
+				 logger.info(schema + "." + table + " не найдена");
+				}
+		}
 
 	}
 
@@ -93,7 +120,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			String connectCommand = sb.toString();
 			
 			// Перезаписываем load script файл
-			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(loadScriptFileName),false));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(scriptFileName),false));
 			bw.write(connectCommand);
 			bw.newLine();
 			bw.write(loadCommand);
@@ -122,7 +149,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		if (batchFile.isFile()) {
 			batchFile.delete();
 		}
-		File scriptFile = new File(loadScriptFileName);
+		File scriptFile = new File(scriptFileName);
 		if (scriptFile.isFile()) {
 			scriptFile.delete();
 		}

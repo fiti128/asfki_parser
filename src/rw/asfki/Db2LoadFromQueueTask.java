@@ -84,7 +84,7 @@ public class Db2LoadFromQueueTask implements Runnable {
 
 			try {
 				db2load.loadFromQueue(queue);
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
