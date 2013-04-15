@@ -6,6 +6,7 @@
  */
 package rw.asfki.dao;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Queue;
@@ -50,8 +51,8 @@ public interface DB2LoadDAO {
 	/**
 	 * Загружает группу файлов, используя очередь с настройками для загрузки по каждому файлу
 	 * @param db2probs
-	 * @throws SQLException
+	 * @throws Exception
 	 */
 	public void loadFromQueue(Queue<Db2FileLoadProps> db2probs)
-			throws SQLException;
+			throws Exception;
 }
