@@ -1,0 +1,12 @@
+CONNECT TO YanDB USER ircm_yanusheusky USING          
+
+   Database Connection Information
+
+ Database server        = DB2/NT 9.7.5
+ SQL authorization ID   = IRCM_YAN...
+ Local database alias   = YANDB
+
+
+LOAD FROM "D:\\wsp\\XMLParser\\ASFKI_Parser1\\asfki_db2_files\\MODERNIZACIA.txt" OF DEL modified by nochardel coldel0x7c MESSAGES "D:\logs\MODERNIZACIA_log.txt" INSERT INTO IA00.MODERNIZACIAcommit
+SQL3304N  The table does not exist.
+

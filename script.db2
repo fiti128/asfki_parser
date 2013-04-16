@@ -1,0 +1,2 @@
+CONNECT TO YanDB USER ircm_yanusheusky USING Zydfhm129;
+LOAD FROM "D:\\wsp\\XMLParser\\ASFKI_Parser1\\asfki_db2_files\\MODERNIZACIA.txt" OF DEL modified by nochardel coldel0x7c MESSAGES "D:\logs\MODERNIZACIA_log.txt" INSERT INTO IA00.MODERNIZACIAcommit;

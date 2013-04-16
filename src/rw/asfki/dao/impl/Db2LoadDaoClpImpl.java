@@ -2,10 +2,14 @@ package rw.asfki.dao.impl;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -29,13 +33,16 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		this.db2properties = props;
 		File batchFile = new File(batchFileName);
 		FileWriter fw = new FileWriter(batchFile,false);
-		fw.write("db2 +c -tf \"" +scriptFileName+"\"");
+		fw.write("db2 +c -tvf \"" +scriptFileName+"\" > \"log.txt\"");
 		fw.close();
 		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i",batchFileName);
 		processBuilder.directory(batchFile.getParentFile());
 		this.processBuilder = processBuilder;
-		
-				
+			
+	}
+	
+	public static Db2LoadDaoClpImpl getInstance(Properties props) throws IOException {
+		return new Db2LoadDaoClpImpl(props);
 	}
 	@Override
 	public void loadFile(String absPathToFile, String delimeter,
@@ -57,9 +64,10 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		StringBuilder sb = new StringBuilder();
 		String databaseName = db2properties.getProperty("database");
 		String userName = db2properties.getProperty("user");
-		String password = db2properties.getProperty("database");
+		String password = db2properties.getProperty("password");
+		sb.setLength(0);
 		sb.append("CONNECT TO ").append(databaseName).append(" USER ")
-			.append(userName).append(" USING ").append(password).append(";");
+		.append(userName).append(" USING ").append(password).append(";");
 		String connectCommand = sb.toString();
 		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(scriptFileName),false));
 		bw.write(connectCommand);
@@ -71,23 +79,27 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			sb.append("alter table ").append(schema).append(".")
 				.append(table).append(" activate not logged initially with empty table").append(";");
 			String alterTable = sb.toString();
-			bw.newLine();
+//			bw.newLine();
 			bw.write(alterTable);
-			
-				Process process = processBuilder.start();
-				int errorlevel = process.exitValue();
-				if (errorlevel == 0) {
-				 logger.info(schema + "." + table + " очищена");
-				} else {
-				 logger.info(schema + "." + table + " не найдена");
-				}
+			bw.write("commit;");
 		}
+		bw.close();
+		FileInputStream  fis = new FileInputStream(new File(scriptFileName));
+		int i;
+		while ((i = fis.read()) >= 0) {
+			System.out.print((char)i);
+		}
+		Process process = processBuilder.start();
+		process.waitFor();
+		System.out.println("");
+		logger.info("Список очищен");
+
 
 	}
 
 	@Override
 	public void loadFromQueue(Queue<Db2FileLoadProps> db2props)
-			throws SQLException, IOException {
+			throws SQLException, IOException, InterruptedException {
 		Db2FileLoadProps db2prop;
 		Db2FileLoadProps props;
 		Queue<Db2FileLoadProps> props2 = new PriorityBlockingQueue<Db2FileLoadProps>();
@@ -107,16 +119,17 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			StringBuilder sb = new StringBuilder();
 			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
 				.append(" OF DEL modified by nochardel coldel").append(delimeter)
-				.append(" MESSAGES ").append("\"").append(absPathToLogFile).append("\"")
-				.append(" INSERT INTO ").append(schema).append(".").append(table).append(";");
+				.append(" MESSAGES ").append("\"").append("D:\\logs\\").append(table).append("_log.txt").append("\"")
+				.append(" INSERT INTO ").append(schema).append(".").append(table);
 			String loadCommand = sb.toString();
+			System.out.println(loadCommand);
 			
-			sb.setLength(0);
 			String databaseName = db2properties.getProperty("database");
 			String userName = db2properties.getProperty("user");
-			String password = db2properties.getProperty("database");
+			String password = db2properties.getProperty("password");
+			sb.setLength(0);
 			sb.append("CONNECT TO ").append(databaseName).append(" USER ")
-				.append(userName).append(" USING ").append(password).append(";");
+			.append(userName).append(" USING ").append(password).append(";");
 			String connectCommand = sb.toString();
 			
 			// Перезаписываем load script файл
@@ -124,11 +137,24 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			bw.write(connectCommand);
 			bw.newLine();
 			bw.write(loadCommand);
+			bw.write("commit;");
 			bw.close();
 			
 			logger.info(table + " start loading");
-			processBuilder.start();
-			logger.info(table + " end loading");
+			Process process = processBuilder.start();
+			int errorlevel = process.waitFor();
+			if (errorlevel > 0) {
+//				InputStream is = process.getErrorStream();
+//				InputStreamReader isr = new InputStreamReader(is,Charset.forName("866"));
+//				int i;
+//				while ((i = isr.read()) >= 0) {
+//					System.out.print((char)i);
+//				}
+				
+			} else {
+				logger.info(table + " end loading");
+				System.err.println(table + " loaded");
+			}
 			
 			
 		}

@@ -6,7 +6,9 @@
  */
 package rw.asfki;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.Queue;
 
 import javax.sql.DataSource;
@@ -16,6 +18,7 @@ import org.apache.log4j.Logger;
 import rw.asfki.domain.*;
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
+import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 /**
  * Класс создан для многопоточной работы со списком. Цель - вносить в базу элементы, как только 
  * они появляются в списке. Поэтому при создании класса нам требуется сам список, и детали
@@ -51,9 +54,13 @@ public class Db2LoadFromQueueTask implements Runnable {
 	private DB2LoadDAO db2load;
 	private volatile boolean stopFlag;
 
-	Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, DataSource dataSource) {
+	public Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, DataSource dataSource) {
 		this.queue = queue;
 		this.db2load = new DB2LoadDAOJDBCImpl(dataSource);
+	}
+	public Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, Properties props) throws IOException {
+		this.queue = queue;
+		this.db2load = Db2LoadDaoClpImpl.getInstance(props);
 	}
 	/**
 	 * Метод <code>isAlive()</code> показывает продолжает ли действовать поток этого класса.

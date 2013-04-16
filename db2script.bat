@@ -1,0 +1,1 @@
+db2 +c -tvf "script.db2" > "log.txt"

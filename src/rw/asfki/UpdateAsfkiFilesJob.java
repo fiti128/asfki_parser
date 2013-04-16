@@ -45,6 +45,7 @@ import rw.asfki.JAXB2Entity.spisok.SpisokRow;
 
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
+import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.filters.AsfkiFilter;
@@ -209,9 +210,10 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			dbFileBaseProperties.setSchema(schema);
 			
 		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
-		
-		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, new DataSourceFromProperties());
+		Properties databaseProperties = UsefulMethods.loadProperties("database.properties");
+		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties);
 		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
+//		DB2LoadDAO db2load = Db2LoadDaoClpImpl.getInstance(databaseProperties);
 		db2load.cleanTables(list, schema);
 		db2Task.start();
 //		createFolder(asfkiDb2Folder);
@@ -479,7 +481,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 //			}
 		}
 		finally {
-			clean(downloadFolder);
+//			clean(downloadFolder);
 //			clean(asfkiDb2Folder);
 		
 		}
