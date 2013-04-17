@@ -21,9 +21,11 @@ import org.apache.log4j.Logger;
 import rw.asfki.UpdateAsfkiFilesJob;
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.error.ErrorManager;
 
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
+	private ErrorManager errorManager;
 	private int counter = 0;
 	private String batchFileName;
 	private String scriptFileName;
@@ -34,7 +36,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	private File scriptFile;
 	
 	
-	private Db2LoadDaoClpImpl(Properties props) throws IOException {
+	private Db2LoadDaoClpImpl(Properties props, ErrorManager errorManager) throws IOException {
+		this.errorManager = errorManager;
 		this.db2properties = props;
 		tempDir = new File("temp");
 		if (!tempDir.isDirectory()) {
@@ -42,7 +45,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		}
 		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
 		scriptFileName = Integer.toHexString(this.hashCode()) +".db2";
-		scriptFile = new File(tempDir,scriptFileName);
+		scriptFile = new File(tempDir, scriptFileName);
 		batchFile = new File(tempDir,batchFileName);
 		FileWriter fw = new FileWriter(batchFile, false);
 		fw.write("db2 -t -f " + scriptFileName);
@@ -53,8 +56,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			
 	}
 	
-	public static Db2LoadDaoClpImpl getInstance(Properties props) throws IOException {
-		return new Db2LoadDaoClpImpl(props);
+	public static Db2LoadDaoClpImpl getInstance(Properties props, ErrorManager errorManager) throws IOException {
+		return new Db2LoadDaoClpImpl(props,errorManager);
 	}
 	@Override
 	public void loadFile(String absPathToFile, String delimeter,
@@ -159,12 +162,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			int errorlevel = process.waitFor();
 			if (errorlevel > 0) {
 				logger.error(table + " proccessed with errors");
-				InputStream is = process.getErrorStream();
-				InputStreamReader isr = new InputStreamReader(is,Charset.forName("866"));
-				int i;
-				while ((i = isr.read()) >= 0) {
-					System.out.print((char)i);
-				}
+				errorManager.addErrorFile(logFile);
 				
 			} else {
 				logger.info(table + " loaded");

@@ -28,6 +28,8 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -45,6 +47,7 @@ import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.error.ErrorManager;
 import rw.asfki.filters.AsfkiFilter;
 import rw.asfki.properties.DataSourceFromProperties;
 import rw.asfki.sax.AsfkiHandler;
@@ -64,6 +67,8 @@ import rw.asfki.util.UsefulMethods;
  */
 public class UpdateAsfkiFilesJob implements Runnable {
 	protected static Logger logger = Logger.getLogger("service");
+	private static String errorFolder = "error";
+	public static ErrorManager errorManager = new ErrorManager(new File(errorFolder));
 	public static int LIST_SIZE = 0;
 	private String defaultTime;
 	private String inputFile;
@@ -211,7 +216,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			
 		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
 		Properties databaseProperties = UsefulMethods.loadProperties("database.properties");
-		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties);
+		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties, errorManager);
 //		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
 //		DB2LoadDAO db2load = Db2LoadDaoClpImpl.getInstance(databaseProperties);
 //		db2load.cleanTables(list, schema);
@@ -456,6 +461,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			LIST_SIZE = list.size();
 			if (list.size() > 0) {
 			updateTables(list);
+			errorManager.sendToMail("ircm_yanusheusky@mnsk.rw.by");
 			updateList(); }
 			else {
 				logger.info("Все обновленно");
@@ -470,10 +476,20 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 //			}
 		}
 		finally {
-//			clean(downloadFolder);
-//			clean(asfkiDb2Folder);
+			clean(downloadFolder);
+			clean(asfkiDb2Folder);
+			clean(errorFolder);
 		
 		}
+		//Sending error by email
+		try {
+			
+		} catch (Exception e) {
+			
+		}
+	
+		
+		
 		Date endTime = new Date();
 		long jobTime = endTime.getTime() - startTime.getTime();
 		String jobPrettyTime = UsefulMethods.millisToLongDHMS(jobTime);
