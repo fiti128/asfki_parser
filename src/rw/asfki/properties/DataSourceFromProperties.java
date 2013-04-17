@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -97,6 +98,12 @@ public class DataSourceFromProperties implements DataSource {
 	public Connection getConnection(String theUsername, String thePassword)
 			throws SQLException {
 		return DriverManager.getConnection(db2Url, theUsername, thePassword);
+	}
+	@Override
+	public java.util.logging.Logger getParentLogger()
+			throws SQLFeatureNotSupportedException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

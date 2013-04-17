@@ -33,6 +33,10 @@ public class AsfkiHandler extends DefaultHandler {
 				if (qName == rowTag) {
 				list.clear();
 			}
+				if (qName == "col") {
+					string = "";
+					
+				}
 		}
 
 		public void endElement (String uri, String name, String qName)
@@ -49,13 +53,14 @@ public class AsfkiHandler extends DefaultHandler {
 //						}
 //					System.out.println();
 					}
+			if(qName == "col") {
+				list.add(string);
+			}
 		}
 
 
 		public void characters (char[] ch, int start, int length) 
 		{
 			string = new String(ch,start,length);
-			list.add(string);
-			string = "";
 		}
 }

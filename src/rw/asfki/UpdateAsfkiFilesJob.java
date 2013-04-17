@@ -14,7 +14,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -42,10 +41,8 @@ import org.xml.sax.helpers.XMLReaderFactory;
 import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
-
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
-import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 import rw.asfki.domain.ASFKI_RowColumn;
 import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.filters.AsfkiFilter;
@@ -54,6 +51,8 @@ import rw.asfki.sax.AsfkiHandler;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UnZip;
 import rw.asfki.util.UsefulMethods;
+
+
 
 /**
  *  ласс объедин€ющий все операции дл€ выполнени€ одной задачи - 
@@ -65,6 +64,7 @@ import rw.asfki.util.UsefulMethods;
  */
 public class UpdateAsfkiFilesJob implements Runnable {
 	protected static Logger logger = Logger.getLogger("service");
+	public static int LIST_SIZE = 0;
 	private String defaultTime;
 	private String inputFile;
 	private String filterRegex;
@@ -212,15 +212,12 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
 		Properties databaseProperties = UsefulMethods.loadProperties("database.properties");
 		Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties);
-		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
+//		DB2LoadDAO db2load = new DB2LoadDAOJDBCImpl(new DataSourceFromProperties());
 //		DB2LoadDAO db2load = Db2LoadDaoClpImpl.getInstance(databaseProperties);
-		db2load.cleanTables(list, schema);
+//		db2load.cleanTables(list, schema);
 		db2Task.start();
 //		createFolder(asfkiDb2Folder);
-		XMLReader xr;
-		Db2Writer writer;
-		AsfkiHandler asfkiHandler;
-		InputSource is;
+
 		
 		for (String fileName : list) {
 			
@@ -247,21 +244,12 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			// Convert it
 			File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
 			
-			// Initializing
-			xr = XMLReaderFactory.createXMLReader();
-			writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File.getAbsoluteFile(),true)));
-			asfkiHandler = AsfkiHandler.getInstance(writer, rowTag);
-			xr.setContentHandler(asfkiHandler);
-			is = new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+			convert(unzipedFile, db2File);
 			
-			// Converting
-			xr.parse(is);
-			writer.flush();
-			writer.close();
 			
 			
 			logger.info(db2File.getAbsolutePath() + " сконвертирован");
-			logger.info("Oсталось файлов: " + (list.size() - list.indexOf(fileName)-1) + " из " + list.size());
+			
 			// Offer to list complete details to load this file to db
 			db2Queue.offer(db2fProperties);
 			// Notifying another threads of new element in the queue
@@ -465,6 +453,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		Date startTime = new Date();
 		try {
 			List<String> list = getListToUpdate();
+			LIST_SIZE = list.size();
 			if (list.size() > 0) {
 			updateTables(list);
 			updateList(); }
@@ -510,5 +499,18 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			}
 			
 		}
+	}
+	public void convert(File from, File to) throws Exception{
+		XMLReader xr = XMLReaderFactory.createXMLReader();
+		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(to,false)));
+		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, "row");
+		xr.setContentHandler(asfkiHandler);
+//		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(from)) ,"UTF-8"));
+		
+		// Converting
+		xr.parse(is);
+		writer.flush();
+		writer.close();
 	}
 }

@@ -159,7 +159,7 @@ public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
 				.append(" OF DEL modified by nochardel coldel").append(delimeter)
 				.append(" MESSAGES ").append("\"").append(absPathToLogFile).append("\"")
-				.append(" INSERT INTO ").append(schema).append(".").append(table);
+				.append(" REPLACE INTO ").append(schema).append(".").append(table);
 			String loadCommand = sb.toString();
 			pstm.setString(3, loadCommand);
 			logger.info(table + " start loading");

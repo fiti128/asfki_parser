@@ -18,24 +18,36 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.log4j.Logger;
 
+import rw.asfki.UpdateAsfkiFilesJob;
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.domain.Db2FileLoadProps;
 
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
-	private String batchFileName = "db2script.bat";
-	private String scriptFileName = "script.db2";
+	private int counter = 0;
+	private String batchFileName;
+	private String scriptFileName;
 	private ProcessBuilder processBuilder;
 	private Properties db2properties;
+	private File tempDir;
+	private File batchFile;
+	private File scriptFile;
 	
 	
 	private Db2LoadDaoClpImpl(Properties props) throws IOException {
 		this.db2properties = props;
-		File batchFile = new File(batchFileName);
-		FileWriter fw = new FileWriter(batchFile,false);
-		fw.write("db2 +c -tvf \"" +scriptFileName+"\" > \"log.txt\"");
+		tempDir = new File("temp");
+		if (!tempDir.isDirectory()) {
+			tempDir.mkdir();
+		}
+		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
+		scriptFileName = Integer.toHexString(this.hashCode()) +".db2";
+		scriptFile = new File(tempDir,scriptFileName);
+		batchFile = new File(tempDir,batchFileName);
+		FileWriter fw = new FileWriter(batchFile, false);
+		fw.write("db2 -t -f " + scriptFileName);
 		fw.close();
-		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i",batchFileName);
+		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i", batchFileName);
 		processBuilder.directory(batchFile.getParentFile());
 		this.processBuilder = processBuilder;
 			
@@ -116,11 +128,12 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			String absPathToLogFile = props.getAbsPathToLogFile();
 			String schema = props.getSchema();
 			String table = props.getTable();
+			File logFile = new File(tempDir, table + "_log.txt");
 			StringBuilder sb = new StringBuilder();
 			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
 				.append(" OF DEL modified by nochardel coldel").append(delimeter)
-				.append(" MESSAGES ").append("\"").append("D:\\logs\\").append(table).append("_log.txt").append("\"")
-				.append(" INSERT INTO ").append(schema).append(".").append(table);
+				.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
+				.append(" REPLACE INTO ").append(schema).append(".").append(table).append(";");
 			String loadCommand = sb.toString();
 			System.out.println(loadCommand);
 			
@@ -131,30 +144,34 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			sb.append("CONNECT TO ").append(databaseName).append(" USER ")
 			.append(userName).append(" USING ").append(password).append(";");
 			String connectCommand = sb.toString();
+
 			
 			// Перезаписываем load script файл
-			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(scriptFileName),false));
+			
+			BufferedWriter bw = new BufferedWriter(new FileWriter(scriptFile,false));
 			bw.write(connectCommand);
 			bw.newLine();
 			bw.write(loadCommand);
-			bw.write("commit;");
 			bw.close();
 			
 			logger.info(table + " start loading");
 			Process process = processBuilder.start();
 			int errorlevel = process.waitFor();
 			if (errorlevel > 0) {
-//				InputStream is = process.getErrorStream();
-//				InputStreamReader isr = new InputStreamReader(is,Charset.forName("866"));
-//				int i;
-//				while ((i = isr.read()) >= 0) {
-//					System.out.print((char)i);
-//				}
+				logger.error(table + " proccessed with errors");
+				InputStream is = process.getErrorStream();
+				InputStreamReader isr = new InputStreamReader(is,Charset.forName("866"));
+				int i;
+				while ((i = isr.read()) >= 0) {
+					System.out.print((char)i);
+				}
 				
 			} else {
-				logger.info(table + " end loading");
-				System.err.println(table + " loaded");
+				logger.info(table + " loaded");
 			}
+			int size = UpdateAsfkiFilesJob.LIST_SIZE;
+			counter++;
+			logger.info("Oсталось файлов: " + (size - counter) + " из " + size);
 			
 			
 		}
@@ -170,14 +187,5 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	   db2HexDelimeter = "0x" + db2HexDelimeter;
 	return db2HexDelimeter;
 }
-	protected void finalize() {
-		File batchFile = new File(batchFileName);
-		if (batchFile.isFile()) {
-			batchFile.delete();
-		}
-		File scriptFile = new File(scriptFileName);
-		if (scriptFile.isFile()) {
-			scriptFile.delete();
-		}
-	}
+
 }
