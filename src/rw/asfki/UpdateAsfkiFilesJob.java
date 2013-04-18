@@ -6,6 +6,7 @@
  */
 package rw.asfki;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -173,18 +174,27 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	}
 	
 	private void downloadFile(URL fileUrl, File downloadedSpisok) throws IOException {
-		  try {
-			  ReadableByteChannel rbc = Channels.newChannel(fileUrl.openStream());
-			  FileOutputStream fos = new FileOutputStream(downloadedSpisok);
-			  fos.getChannel().transferFrom(rbc, 0, 1 << 24);
-			  fos.flush();
-			  fos.close();
-			  fos = null;
-			  System.gc();
-		} catch (IOException e) {
-			logger.error("Не смог скачать файл " + fileUrl.toString());
-			throw e;
-		}
+		BufferedInputStream in = null;
+    	FileOutputStream fout = null;
+    	try
+    	{
+    		in = new BufferedInputStream(fileUrl.openStream());
+    		fout = new FileOutputStream(downloadedSpisok);
+
+    		byte data[] = new byte[2048];
+    		int count;
+    		while ((count = in.read(data, 0, 2048)) != -1)
+    		{
+    			fout.write(data, 0, count);
+    		}
+    	}
+    	finally
+    	{
+    		if (in != null)
+    			in.close();
+    		if (fout != null)
+    			fout.close();
+    	}
 		
 	}
 	private void createFolder(String downloadFolder) {
@@ -279,7 +289,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 					}
 				}
 			}
-			if (field.getType() == Boolean.class) {
+			if (field.getType() == boolean.class) {
 				String temp = props.getProperty(field.getName());
 				if (temp != null) {
 					field.setAccessible(true);

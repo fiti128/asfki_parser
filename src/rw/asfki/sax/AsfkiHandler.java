@@ -21,6 +21,7 @@ public class AsfkiHandler extends DefaultHandler {
 		super();
 		this.writer = writer;
 		this.rowTag = rowTag.intern();
+		this.colTag = colTag.intern();
 	}
 	public static AsfkiHandler getInstance(Db2Writer writer,String rowTag, String colTag) {
 		return new AsfkiHandler(writer,rowTag,colTag);

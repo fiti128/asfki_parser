@@ -64,7 +64,7 @@ public class UnZip
             //else you will hit FileNotFoundException for compressed folder
             new File(newFile.getParent()).mkdirs();
  
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile),BUFFER);             
+            FileOutputStream bos = new FileOutputStream(newFile);             
  
             int len;
             while ((len = zis.read(buffer,0,BUFFER)) != -1) {
