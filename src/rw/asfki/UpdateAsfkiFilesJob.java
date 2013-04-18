@@ -376,7 +376,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		String db2FilePathForLoad = absolutePath.replaceAll("\\\\", "\\\\\\\\");
 	
 		Db2FileLoadProps db2fProperties = new Db2FileLoadProps();
-		db2fProperties.setAbsPathToLogFolder(absPathToLogFolder);
+		db2fProperties.setAbsPathToLogFolder(downloadFolder);
 		db2fProperties.setDelimeter(delimeter);
 		db2fProperties.setSchema(schema);
 		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
