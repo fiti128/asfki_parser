@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.zip.ZipInputStream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -350,18 +351,24 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		this.rowTag = rowTag;
 	}
 
-	private void convert(File xmlFile, File db2File) throws Exception{
-		XMLReader xr = XMLReaderFactory.createXMLReader();
-		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
-		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
-		xr.setContentHandler(asfkiHandler);
-//		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
-		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(xmlFile)) ,"UTF-8"));
-		
-		// Converting
-		xr.parse(is);
-		writer.flush();
-		writer.close();
+	private void convert(File zipFile, File db2File) throws Exception{
+	    ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
+    	//get the zipped file list entry
+    	    zis.getNextEntry();
+        	
+    		XMLReader xr = XMLReaderFactory.createXMLReader();
+    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
+    		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
+    		xr.setContentHandler(asfkiHandler);
+//    		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+    		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis) ,"UTF-8"));
+             
+            FileOutputStream bos = new FileOutputStream(db2File);             
+    		xr.parse(is);
+    		writer.flush();
+    		writer.close();
+  
+    		zis.close();
 	}
 	
 	private void processUrl(URL url, Queue<Db2FileLoadProps> db2Queue) throws Exception {
@@ -387,15 +394,8 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		File file = new File(filePath);
 				
 		downloadFile(url, file);
-		
-		// Unzip it
-		UnZip unzip = new UnZip();
-		unzip.unZipIt(filePath, downloadFolder);
-		
-		// Convert it
-		File unzipedFile = new File(downloadFolder + "/" + fileName + ".xml");
-		
-		convert(unzipedFile, db2File);
+	
+		convert(file, db2File);
 		
 		logger.info(db2File.getAbsolutePath() + " сконвертирован");
 		
