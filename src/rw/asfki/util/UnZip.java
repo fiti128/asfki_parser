@@ -6,6 +6,8 @@
  */
 package rw.asfki.util;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,7 +37,7 @@ public class UnZip
      * @throws IOException 
      */
     public void unZipIt(String zipFile, String outputFolder) throws IOException{
-     int BUFFER = 1024;
+     int BUFFER = 2048;
      byte[] buffer = new byte[BUFFER];
  
      try{
@@ -48,11 +50,11 @@ public class UnZip
  
     	//get the zip file content
     	ZipInputStream zis = 
-    		new ZipInputStream(new FileInputStream(zipFile));
+    		new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile),BUFFER));
     	//get the zipped file list entry
-    	ZipEntry ze = zis.getNextEntry();
+    	ZipEntry ze;
  
-    	while(ze!=null){
+    	while((ze=zis.getNextEntry())!=null){
     	
     	   String fileName = ze.getName();
            File newFile = new File(outputFolder + File.separator + fileName);
@@ -62,15 +64,15 @@ public class UnZip
             //else you will hit FileNotFoundException for compressed folder
             new File(newFile.getParent()).mkdirs();
  
-            FileOutputStream fos = new FileOutputStream(newFile);             
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile),BUFFER);             
  
             int len;
             while ((len = zis.read(buffer,0,BUFFER)) != -1) {
-       		fos.write(buffer, 0, len);
+       		bos.write(buffer, 0, len);
             }
- 
-            fos.close();   
-            ze = zis.getNextEntry();
+            bos.flush();
+            bos.close();   
+            
     	}
  
         zis.closeEntry();

@@ -25,6 +25,8 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import rw.asfki.util.UsefulMethods;
+
 
 
 public class ErrorManager {
@@ -40,18 +42,9 @@ public class ErrorManager {
 	}
 	public void addErrorFile(File errorFile) throws IOException {
 		File storedErrorFile = new File(errorDir,errorFile.getName());
-		FileWriter fw = new FileWriter(storedErrorFile,false);
-		BufferedReader br = new BufferedReader(new FileReader(errorFile));
-		String str;
-		while((str = br.readLine()) != null)
-		{
-			fw.write(str);
-			fw.write("\n");
-		}
-		
-		fw.flush();
-		fw.close();
+		UsefulMethods.copyFile(errorFile, storedErrorFile, true);
 	}
+
 	public void sendToMail(String email) throws IOException, AddressException, MessagingException {
 		// Archive error folder
 		File zipFile = new File("errors.zip");

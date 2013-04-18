@@ -15,14 +15,15 @@ public class AsfkiHandler extends DefaultHandler {
 	private String string;
 	private List<String> list = new ArrayList<String>();
 	private String rowTag;
+	private String colTag;
 	
-	private AsfkiHandler(Db2Writer writer, String rowTag) {
+	private AsfkiHandler(Db2Writer writer, String rowTag,String colTag) {
 		super();
 		this.writer = writer;
 		this.rowTag = rowTag.intern();
 	}
-	public static AsfkiHandler getInstance(Db2Writer writer,String rowTag) {
-		return new AsfkiHandler(writer,rowTag);
+	public static AsfkiHandler getInstance(Db2Writer writer,String rowTag, String colTag) {
+		return new AsfkiHandler(writer,rowTag,colTag);
 	}
 		
 	public void startElement(String namespaceURI,
@@ -33,7 +34,7 @@ public class AsfkiHandler extends DefaultHandler {
 				if (qName == rowTag) {
 				list.clear();
 			}
-				if (qName == "col") {
+				if (qName == colTag) {
 					string = "";
 					
 				}
@@ -48,12 +49,9 @@ public class AsfkiHandler extends DefaultHandler {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-//						for (String string : list) {
-//							System.out.print(string);
-//						}
-//					System.out.println();
+
 					}
-			if(qName == "col") {
+			if(qName == colTag) {
 				list.add(string);
 			}
 		}

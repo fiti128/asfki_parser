@@ -102,6 +102,7 @@ public class Db2LoadFromQueueTask implements Runnable {
  */
 	public void start() {
 		thisThread = new Thread(this);
+		thisThread.setPriority(10);
 		thisThread.setName("Пользуясь случаем, хочу передать привет Маме!");
 		thisThread.setDaemon(false);
 		thisThread.start();

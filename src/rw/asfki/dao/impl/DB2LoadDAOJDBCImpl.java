@@ -88,7 +88,7 @@ public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 	public void loadFile(Db2FileLoadProps db2File) throws SQLException {
 		String absPathToFile = db2File.getAbsPathToFile();
 		String delimeter = db2File.getDelimeter();
-		String absPathToLogFile = db2File.getAbsPathToLogFile();
+		String absPathToLogFile = db2File.getAbsPathToLogFolder();
 		String schema = db2File.getSchema();
 		String table = db2File.getTable();
 		loadFile(absPathToFile,delimeter,absPathToLogFile,schema,table);
@@ -152,7 +152,7 @@ public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 			String absPathToFile = props.getAbsPathToFile();
 			String delimeter = props.getDelimeter();
 			delimeter = toDb2Hex(delimeter);
-			String absPathToLogFile = props.getAbsPathToLogFile();
+			String absPathToLogFile = props.getAbsPathToLogFolder();
 			String schema = props.getSchema();
 			String table = props.getTable();
 			StringBuilder sb = new StringBuilder();

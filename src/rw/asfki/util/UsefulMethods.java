@@ -9,8 +9,10 @@ package rw.asfki.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.util.Properties;
 /**
  * Класс, включающие в себя пару полезных методов.
@@ -105,4 +107,46 @@ public class UsefulMethods {
 
 		return prop;
 	}
+	
+	public static void copyFile(File sourceFile, File destFile, final boolean isOverwrite) throws IOException {
+		  if (destFile.isDirectory())
+		     destFile = new File(destFile, sourceFile.getName());
+		  if (destFile.exists())
+		  {
+		     if (isOverwrite)
+		        destFile.delete();
+		     else
+		        throw new IOException(destFile.getAbsolutePath() + " exists");
+		  }
+		  if (!destFile.exists()) {
+		    destFile.createNewFile();
+		  }
+		  FileInputStream fIn = null;
+		  FileOutputStream fOut = null;
+		  FileChannel source = null;
+		  FileChannel destination = null;
+		  try {
+		    fIn = new FileInputStream(sourceFile);
+		    source = fIn.getChannel();
+		    fOut = new FileOutputStream(destFile);
+		    destination = fOut.getChannel();
+		    long transfered = 0;
+		    long bytes = source.size();
+		    while (transfered < bytes) {
+		      transfered += destination.transferFrom(source, 0, source.size());
+		      destination.position(transfered);
+		    }
+		  } finally {
+		    if (source != null) {
+		      source.close();
+		    } else if (fIn != null) {
+		      fIn.close();
+		    }
+		    if (destination != null) {
+		      destination.close();
+		    } else if (fOut != null) {
+		      fOut.close();
+		    }
+		  }
+		}
 }

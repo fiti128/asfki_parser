@@ -14,10 +14,14 @@ package rw.asfki.domain;
  * @author Yanusheusky S.
  * @since 27.02.2013
  */
+/**
+ * @author Yanusheusky S.
+ *
+ */
 public class Db2FileLoadProps implements Cloneable, Comparable<Db2FileLoadProps> {
 	private String absPathToFile;
 	private String delimeter;
-	private String absPathToLogFile;
+	private String absPathToLogFolder;
 	private String schema;
 	private String table;
 
@@ -45,12 +49,13 @@ public class Db2FileLoadProps implements Cloneable, Comparable<Db2FileLoadProps>
 		this.delimeter = delimeter;
 	}
 
-	public String getAbsPathToLogFile() {
-		return absPathToLogFile;
+
+	public String getAbsPathToLogFolder() {
+		return absPathToLogFolder;
 	}
 
-	public void setAbsPathToLogFile(String absPathToLogFile) {
-		this.absPathToLogFile = absPathToLogFile;
+	public void setAbsPathToLogFolder(String absPathToLogFolder) {
+		this.absPathToLogFolder = absPathToLogFolder;
 	}
 
 	public String getSchema() {
@@ -97,10 +102,10 @@ public class Db2FileLoadProps implements Cloneable, Comparable<Db2FileLoadProps>
 				return false;
 		} else if (!absPathToFile.equals(other.absPathToFile))
 			return false;
-		if (absPathToLogFile == null) {
-			if (other.absPathToLogFile != null)
+		if (absPathToLogFolder == null) {
+			if (other.absPathToLogFolder != null)
 				return false;
-		} else if (!absPathToLogFile.equals(other.absPathToLogFile))
+		} else if (!absPathToLogFolder.equals(other.absPathToLogFolder))
 			return false;
 		if (delimeter == null) {
 			if (other.delimeter != null)

@@ -125,20 +125,18 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		// И вот только ее и грузим в базу
 		while ((props = props2.poll()) != null) {
 			String absPathToFile = props.getAbsPathToFile();
-			File dir = new File(absPathToFile).getParentFile();
 			String delimeter = props.getDelimeter();
 			delimeter = toDb2Hex(delimeter);
-			String absPathToLogFile = props.getAbsPathToLogFile();
+			String absPathToLogFolder = props.getAbsPathToLogFolder();
 			String schema = props.getSchema();
 			String table = props.getTable();
-			File logFile = new File(tempDir, table + "_log.txt");
+			File logFile = new File(absPathToLogFolder, table + "_log.txt");
 			StringBuilder sb = new StringBuilder();
 			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
 				.append(" OF DEL modified by nochardel coldel").append(delimeter)
 				.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
 				.append(" REPLACE INTO ").append(schema).append(".").append(table).append(";");
 			String loadCommand = sb.toString();
-			System.out.println(loadCommand);
 			
 			String databaseName = db2properties.getProperty("database");
 			String userName = db2properties.getProperty("user");
