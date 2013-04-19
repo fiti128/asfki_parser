@@ -1,1 +1,0 @@
-db2 -t -f 1fcabd4.db2

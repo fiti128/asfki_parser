@@ -1,20 +1,14 @@
 package rw.asfki.error;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;

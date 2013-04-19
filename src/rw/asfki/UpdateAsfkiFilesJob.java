@@ -9,7 +9,6 @@ package rw.asfki;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -65,6 +64,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String errorFolder = "error";
 	public static int LIST_SIZE = 0;
 	private boolean regularJob;
+	private String mailTo;
 	private String additionalUrls;
 	private String defaultTime;
 	private String inputFile;
@@ -433,10 +433,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		db2fProperties.setSchema(schema);
 		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
 		db2fProperties.setTable(fileName);
-		
-		// Download file
-		String filePath = tempFolder + "/" + fileNameWithExtention;
-	
+
 		convert(url, db2File);
 		
 		logger.info(db2File.getAbsolutePath() + " сконвертирован");
@@ -502,7 +499,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				while (db2Task.isAlive()) {
 					Thread.sleep(200);
 				}
-				errorManager.sendToMail("ircm_yanusheusky@mnsk.rw.by");
+				errorManager.sendToMail(mailTo);
 				if (regularJob) {
 					updateList();
 				}

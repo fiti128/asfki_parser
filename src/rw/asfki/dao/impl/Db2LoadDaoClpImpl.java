@@ -5,11 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -63,7 +60,6 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	public void loadFile(String absPathToFile, String delimeter,
 			String absPathToLogFile, String schema, String table)
 			throws SQLException {
-		// TODO Auto-generated method stub
 
 	}
 
