@@ -352,7 +352,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	}
 
 	private void convert(File zipFile, File db2File) throws Exception{
-	    ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
+	    	ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
     	//get the zipped file list entry
     	    zis.getNextEntry();
         	
@@ -368,6 +368,24 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
     		writer.flush();
     		writer.close();
   
+    		zis.close();
+	}
+	private void convert(URL url, File db2File) throws Exception {
+		   ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()));
+    	//get the zipped file list entry
+    	    zis.getNextEntry();
+        	
+    		XMLReader xr = XMLReaderFactory.createXMLReader();
+    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
+    		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
+    		xr.setContentHandler(asfkiHandler);
+//    		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+    		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis) ,"UTF-8"));
+                  
+    		xr.parse(is);
+    		writer.flush();
+    		writer.close();
+    		
     		zis.close();
 	}
 	
@@ -393,9 +411,9 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		String filePath = downloadFolder + "/" + fileNameWithExtention;
 		File file = new File(filePath);
 				
-		downloadFile(url, file);
+//		downloadFile(url, file);
 	
-		convert(file, db2File);
+		convert(url, db2File);
 		
 		logger.info(db2File.getAbsolutePath() + " сконвертирован");
 		
@@ -469,7 +487,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		}
 		finally {
 			clean(downloadFolder);
-			clean(asfkiDb2Folder);
+//			clean(asfkiDb2Folder);
 			clean(errorFolder);
 		
 		}
