@@ -39,7 +39,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	private Db2LoadDaoClpImpl(Properties props, ErrorManager errorManager) throws IOException {
 		this.errorManager = errorManager;
 		this.db2properties = props;
-		tempDir = new File("temp");
+		tempDir = new File(props.getProperty("tempFolder", "temp"));
 		if (!tempDir.isDirectory()) {
 			tempDir.mkdir();
 		}

@@ -32,7 +32,6 @@ public class AsfkiFilter extends FilterInputStream {
 					if (nextChar<'A' && nextChar!='/' && nextChar!='?') {
 						System.err.print("fixup1.1<>:"+currentChar+"@"+i);
 						arg0[i]='_';
-						System.out.print("total - start = " +(total-start) + ". Nextchar = " + nextChar + ". retLen = " + retLen);
 						System.err.println(" fixed1.1<>:"+arg0[i]);
 					} else 	flag++;
 				} else 	flag++;

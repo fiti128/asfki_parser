@@ -50,10 +50,11 @@ public class AsfkiHandler extends DefaultHandler {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+						
 
 					}
 			if(qName == colTag) {
-				list.add(string);
+				list.add(string.trim());
 			}
 		}
 
