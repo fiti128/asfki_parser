@@ -436,7 +436,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 
 		convert(url, db2File);
 		
-		logger.info(db2File.getAbsolutePath() + " сконвертирован");
+		logger.info(db2File.getAbsolutePath() + " konverted");
 		
 		// Offer to list complete details to load this file to db
 		db2Queue.offer(db2fProperties);
@@ -449,7 +449,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	
 	@Override
 	public void run() {
-		logger.info("Начало работы");
+		logger.info("Starting job");
 		Date startTime = new Date();
 		clean(tempFolder);
 		createFolder(tempFolder);
@@ -505,7 +505,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				}
 			}
 			else {
-				logger.info("Все обновленно");
+				logger.info("Everything is up to date");
 			}
 			} catch (Exception e) {
 			e.printStackTrace();

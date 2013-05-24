@@ -163,7 +163,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			}
 			int size = UpdateAsfkiFilesJob.LIST_SIZE;
 			counter++;
-			logger.info("Oсталось файлов: " + (size - counter) + " из " + size);
+			logger.info("Files remaining: " + (size - counter) + " from " + size);
 			
 			
 		}
