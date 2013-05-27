@@ -36,6 +36,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
+import org.tukaani.xz.XZInputStream;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -181,9 +182,9 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			Map<String, Timestamp> newMap = new HashMap<String, Timestamp>();
 			for (ASFKI_RowColumn asfki_RowColumn : downloadedList) {
 				String key = asfki_RowColumn.getBody();
-				String pattern = asfki_RowColumn.getAttributes().get("format");
-				String correctionTime = asfki_RowColumn.getAttributes().get("cor_time");
-				SimpleTimestampFormat stf = new SimpleTimestampFormat(pattern);
+				String pattern = asfki_RowColumn.getAttributes().get("dateFormat");
+				String correctionTime = asfki_RowColumn.getAttributes().get("changedDate");
+				SimpleTimestampFormat stf = new SimpleTimestampFormat();
 				Timestamp value = stf.parse(correctionTime);
 				newMap.put(key, value);
 				listToCompare.add(key);
@@ -218,6 +219,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				Timestamp oldTimeToCompare = (oldMap.get(key) == null) ? defaultTs : oldMap.get(key);
 				Timestamp newTimeToCompare = newMap.get(key);
 				if (newTimeToCompare.after(oldTimeToCompare)) {
+					System.out.println(spisokUrlFolder + key + archiveExtention);
 					URL url = new URL(spisokUrlFolder + key + archiveExtention);
 					listToUpdate.add(url);
 				}
@@ -398,9 +400,11 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	}
 
 	private void convert(URL url, File db2File) throws Exception {
-		   ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()));
-    	//get the zipped file list entry
-    	    zis.getNextEntry();
+			XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
+			
+//		   ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()));
+//    	//get the zipped file list entry
+//    	    zis.getNextEntry();
         	
     		XMLReader xr = XMLReaderFactory.createXMLReader();
     		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
@@ -419,7 +423,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	private void processUrl(URL url, Queue<Db2FileLoadProps> db2Queue) throws Exception {
 		
 		String fileNameWithExtention = new File(url.getPath()).getName();
-		String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-4);
+		String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
 		
 		String db2FilePath = tempFolder + "/" + fileName + db2lExtention;
 		File db2File = createFile(db2FilePath);
@@ -466,7 +470,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			StringBuilder sb = new StringBuilder();
 			for (URL url : list) {
 				String fileNameWithExtention = new File(url.getPath()).getName();
-				String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-4);
+				String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
 				sb.append(fileName).append(" ");
 			}
 			// Показать в логе список таблиц, требующих обновления

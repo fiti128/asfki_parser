@@ -46,7 +46,10 @@ public class AsfkiHandler extends DefaultHandler {
 			if(qName == rowTag){
 				
 						try {
-							writer.writeLine(list);
+							if (list.size() > 0) {
+								
+								writer.writeLine(list);
+							}
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -54,6 +57,7 @@ public class AsfkiHandler extends DefaultHandler {
 
 					}
 			if(qName == colTag) {
+//				System.out.print(string);
 				list.add(string.trim());
 			}
 		}

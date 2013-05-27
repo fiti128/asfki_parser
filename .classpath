@@ -6,5 +6,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Log4j"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/DB2Connector"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Javamail"/>
+	<classpathentry kind="lib" path="D:/libs/xz/xz-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
