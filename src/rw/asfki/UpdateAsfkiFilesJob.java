@@ -282,7 +282,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		return list;
 	}
 	private void updateList() throws JAXBException {
-		
+		// Преобразуем апдейт лист в свою схему (просто копируем новые даные)
 		Root root = new Root();
 		SpisokRow row = new SpisokRow();
 		List<SpisokColumn> spisokColumnList = new ArrayList<SpisokColumn>();
@@ -400,17 +400,13 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	}
 
 	private void convert(URL url, File db2File) throws Exception {
-			XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
-			
-//		   ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()));
-//    	//get the zipped file list entry
-//    	    zis.getNextEntry();
-        	
+
     		XMLReader xr = XMLReaderFactory.createXMLReader();
     		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
     		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
     		xr.setContentHandler(asfkiHandler);
-//    		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+    		
+    		XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
     		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis) ,"UTF-8"));
                   
     		xr.parse(is);
