@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -402,7 +403,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	private void convert(URL url, File db2File) throws Exception {
 
     		XMLReader xr = XMLReaderFactory.createXMLReader();
-    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
+    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(db2File,false),"UTF-8")));
     		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
     		xr.setContentHandler(asfkiHandler);
     		

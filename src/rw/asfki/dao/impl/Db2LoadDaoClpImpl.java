@@ -129,7 +129,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			File logFile = new File(absPathToLogFolder, table + "_log.txt");
 			StringBuilder sb = new StringBuilder();
 			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
-				.append(" OF DEL modified by nochardel coldel").append(delimeter)
+				.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
 				.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
 				.append(" REPLACE INTO ").append(schema).append(".").append(table).append(";");
 			String loadCommand = sb.toString();
