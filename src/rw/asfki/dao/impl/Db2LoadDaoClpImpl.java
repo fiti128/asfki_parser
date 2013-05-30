@@ -1,12 +1,19 @@
 package rw.asfki.dao.impl;
 
+
+
+
+
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -40,6 +47,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		if (!tempDir.isDirectory()) {
 			tempDir.mkdir();
 		}
+		
 //		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
 		scriptFileName = Integer.toHexString(this.hashCode()) +".db2";
 		scriptFile = new File(tempDir, scriptFileName);
@@ -65,8 +73,10 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 
 	@Override
 	public void loadFile(Db2FileLoadProps db2File) throws SQLException {
-		// TODO Auto-generated method stub
-
+		
+		String futureStream = "roror";
+		Charset utf8Charset = Charset.forName("UTF-8");
+		InputStream is = new ByteArrayInputStream(futureStream.getBytes(Charset.forName("UTF-8")));
 	}
 
 	@Override
@@ -126,9 +136,10 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			String absPathToLogFolder = props.getAbsPathToLogFolder();
 			String schema = props.getSchema();
 			String table = props.getTable();
+			
 			File logFile = new File(absPathToLogFolder, table + "_log.txt");
 			StringBuilder sb = new StringBuilder();
-			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
+			sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("1\"")
 				.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
 				.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
 				.append(" REPLACE INTO ").append(schema).append(".").append(table).append(";");

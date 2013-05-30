@@ -403,7 +403,9 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	private void convert(URL url, File db2File) throws Exception {
 
     		XMLReader xr = XMLReaderFactory.createXMLReader();
-    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(db2File,false),"UTF-8")));
+    		String fileName = db2File.getName();
+    		String tableName = fileName.substring(0, fileName.length() - archiveExtention.length());
+    		Db2Writer writer = new Db2WriterPipeImpl(tableName ,delimeter);
     		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
     		xr.setContentHandler(asfkiHandler);
     		

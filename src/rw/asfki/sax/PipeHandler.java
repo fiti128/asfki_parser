@@ -1,6 +1,5 @@
 package rw.asfki.sax;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,24 +7,24 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import rw.asfki.Db2Writer;
 
-public class AsfkiHandler extends DefaultHandler {
-	private String root = "table";
-	private Db2Writer writer;
+public class PipeHandler extends DefaultHandler {
+	
+	private String tableName;
 	private String string;
 	private List<String> list = new ArrayList<String>();
 	private String rowTag;
 	private String colTag;
 	
-	private AsfkiHandler(Db2Writer writer, String rowTag,String colTag) {
+	private PipeHandler(String tableName, String rowTag,String colTag) {
 		super();
-		this.writer = writer;
+
 		this.rowTag = rowTag.intern();
 		this.colTag = colTag.intern();
+		this.tableName = tableName;
 	}
-	public static AsfkiHandler getInstance(Db2Writer writer,String rowTag, String colTag) {
-		return new AsfkiHandler(writer,rowTag,colTag);
+	public static PipeHandler getInstance(String tableName,String rowTag, String colTag) {
+		return new PipeHandler(tableName,rowTag,colTag);
 	}
 		
 	public void startElement(String namespaceURI,
@@ -49,7 +48,7 @@ public class AsfkiHandler extends DefaultHandler {
 						try {
 							if (list.size() > 0) {
 								
-								writer.writeLine(list);
+								writeLine(list);
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -61,18 +60,16 @@ public class AsfkiHandler extends DefaultHandler {
 //				System.out.print(string);
 				list.add(string.trim());
 			}
-			if(qName == root) {
-				try {
-					writer.close();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
 		}
 
 
+		private void writeLine(List<String> row) {
+			
+			
+		}
 		public void characters (char[] ch, int start, int length) 
 		{
 			string = new String(ch,start,length);
 		}
 }
+
