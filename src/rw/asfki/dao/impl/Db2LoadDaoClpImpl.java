@@ -40,15 +40,15 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		if (!tempDir.isDirectory()) {
 			tempDir.mkdir();
 		}
-		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
+//		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
 		scriptFileName = Integer.toHexString(this.hashCode()) +".db2";
 		scriptFile = new File(tempDir, scriptFileName);
-		batchFile = new File(tempDir,batchFileName);
-		FileWriter fw = new FileWriter(batchFile, false);
-		fw.write("db2 -t -f " + scriptFileName);
-		fw.close();
-		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i", batchFileName);
-		processBuilder.directory(batchFile.getParentFile());
+//		batchFile = new File(tempDir,batchFileName);
+//		FileWriter fw = new FileWriter(batchFile, false);
+//		fw.write("db2 -t -f " + scriptFileName);
+//		fw.close();
+		ProcessBuilder processBuilder = new ProcessBuilder("db2.exe","-t","-f", scriptFileName);
+		processBuilder.directory(scriptFile.getParentFile());
 		this.processBuilder = processBuilder;
 			
 	}
@@ -146,8 +146,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			// Перезаписываем load script файл
 			
 			BufferedWriter bw = new BufferedWriter(new FileWriter(scriptFile,false));
-			bw.write(connectCommand);
-			bw.newLine();
+//			bw.write(connectCommand);
+//			bw.newLine();
 			bw.write(loadCommand);
 			bw.close();
 			
