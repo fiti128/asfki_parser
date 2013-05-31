@@ -476,13 +476,32 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			
 			if (list.size() > 0) {
 				ErrorManager errorManager = new ErrorManager(new File(errorFolder));
-				
+				final List<URL> additionalList = new ArrayList<URL>();
+				for (int i = 0; i < list.size()/2; i++) {
+					additionalList.add(list.get(i));
+					list.remove(i);
+				}
+				Thread additional = new Thread(new Runnable() {
+					public void run() {
+						for (URL url : additionalList) {
+							try {
+								processUrl(url);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				});
+				additional.start();
 				
 				for (URL url : list) {
 					processUrl(url);
 				} 
-				// end of list
 				
+				while (additional.isAlive()) {
+					Thread.sleep(200);
+				}
 			
 	
 				errorManager.sendToMail(mailTo);

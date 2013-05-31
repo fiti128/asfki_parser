@@ -30,7 +30,7 @@ import rw.asfki.error.ErrorManager;
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
 	private ErrorManager errorManager;
-	private int counter = 0;
+	static int counter = 0;
 	private String batchFileName;
 	private String scriptFileName;
 	private ProcessBuilder processBuilder;
