@@ -40,10 +40,11 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	private File scriptFile;
 	
 	
+	
 	private Db2LoadDaoClpImpl(Properties props, ErrorManager errorManager) throws IOException {
 		this.errorManager = errorManager;
 		this.db2properties = props;
-		tempDir = new File(props.getProperty("tempFolder", "temp"));
+		tempDir = new File("temp");
 		if (!tempDir.isDirectory()) {
 			tempDir.mkdir();
 		}
@@ -72,11 +73,41 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	}
 
 	@Override
-	public void loadFile(Db2FileLoadProps db2File) throws SQLException {
+	public void loadFile(Db2FileLoadProps props) throws SQLException {
 		
-		String futureStream = "roror";
-		Charset utf8Charset = Charset.forName("UTF-8");
-		InputStream is = new ByteArrayInputStream(futureStream.getBytes(Charset.forName("UTF-8")));
+		String delimeter = props.getDelimeter();
+		delimeter = toDb2Hex(delimeter);
+		String absPathToLogFolder = props.getAbsPathToLogFolder();
+		String schema = props.getSchema();
+		String table = props.getTable();
+		
+		File logFile = new File(absPathToLogFolder, table + "_log.txt");
+		StringBuilder sb = new StringBuilder();
+		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
+			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
+			.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
+			.append(" REPLACE INTO ").append(schema).append(".").append(table);
+		String loadCommand = sb.toString();
+		
+		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
+		
+		logger.info(table + " start loading\n" + loadCommand);
+		try {
+			Process process = pb.start();
+			int errorlevel = process.waitFor();
+			if (errorlevel > 0) {
+				logger.error(table + " proccessed with errors");
+				errorManager.addErrorFile(logFile);
+
+			} else {
+				logger.info(table + " loaded");
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		int size = UpdateAsfkiFilesJob.LIST_SIZE;
+		counter++;
+		logger.info("Files remaining: " + (size - counter) + " from " + size);
 	}
 
 	@Override

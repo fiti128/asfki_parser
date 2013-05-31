@@ -2,10 +2,17 @@ package rw.asfki;
 
 import ibm.Pipes;
 
+import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+
+import rw.asfki.dao.DB2LoadDAO;
+import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
+import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.error.ErrorManager;
 
 public class Db2WriterPipeImpl implements Db2Writer {
 	private static Logger logger = Logger.getLogger("Service");
@@ -17,13 +24,27 @@ public class Db2WriterPipeImpl implements Db2Writer {
 	private int namedPipeHandle;
 	private String pipeName; 
 	private int pipeBuffer = 131072; 
+	final Db2FileLoadProps db2File;
 	
-	public Db2WriterPipeImpl(String name, String columnDelimeter) {
-		this.pipeName = "\\\\.\\pipe\\" +name + "1";
+	public Db2WriterPipeImpl(final Db2FileLoadProps db2File, String columnDelimeter) {
+		this.pipeName = "\\\\.\\pipe\\" +db2File.getTable();
+		this.db2File = db2File;
 		this.columnDelimeter = columnDelimeter;
 		lineSeparator  = java.security.AccessController.doPrivileged(
 	            new sun.security.action.GetPropertyAction("line.separator"));
 	    if(createPipe()) {
+	    	new Thread(new Runnable(){
+	    		public void run() {
+	    			try {
+						DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(null, new ErrorManager(new File("error")));
+						db2LoadDao.loadFile(db2File);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
+					}
+	    		}
+	    	}).start();
 	    	connectToPipe();
 	    }
 	}

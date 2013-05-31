@@ -400,12 +400,12 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		this.rowTag = rowTag;
 	}
 
-	private void convert(URL url, File db2File) throws Exception {
+	private void convert(URL url, Db2FileLoadProps db2FileProps) throws Exception {
 
     		XMLReader xr = XMLReaderFactory.createXMLReader();
-    		String fileName = db2File.getName();
-    		String tableName = fileName.substring(0, fileName.length() - archiveExtention.length());
-    		Db2Writer writer = new Db2WriterPipeImpl(tableName ,delimeter);
+
+
+    		Db2Writer writer = new Db2WriterPipeImpl(db2FileProps ,delimeter);
     		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
     		xr.setContentHandler(asfkiHandler);
     		
@@ -419,7 +419,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
     		zis.close();
 	}
 	
-	private void processUrl(URL url, Queue<Db2FileLoadProps> db2Queue) throws Exception {
+	private void processUrl(URL url) throws Exception {
 		
 		String fileNameWithExtention = new File(url.getPath()).getName();
 		String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
@@ -437,16 +437,12 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
 		db2fProperties.setTable(fileName);
 
-		convert(url, db2File);
+		convert(url, db2fProperties);
 		
 		logger.info(db2File.getAbsolutePath() + " konverted");
 		
 		// Offer to list complete details to load this file to db
-		db2Queue.offer(db2fProperties);
-		// Notifying another threads of new element in the queue
-		synchronized(db2Queue) {
-			db2Queue.notify();
-		}
+
 	
 	}
 	
@@ -480,28 +476,15 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			
 			if (list.size() > 0) {
 				ErrorManager errorManager = new ErrorManager(new File(errorFolder));
-				Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
-				Properties databaseProperties = new Properties();
-				databaseProperties.setProperty("database", database);
-				databaseProperties.setProperty("user", user);
-				databaseProperties.setProperty("password", password);
-				databaseProperties.setProperty("schema", schema);
-				databaseProperties.setProperty("tempFolder", tempFolder);
-				Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties, errorManager);
-				db2Task.start();
-				Thread.yield();
+				
 				
 				for (URL url : list) {
-					processUrl(url, db2Queue);
+					processUrl(url);
 				} 
 				// end of list
 				
 			
-				db2Task.stop();
-				// Just to handle bug of terminating jvm without waiting all threads end their work
-				while (db2Task.isAlive()) {
-					Thread.sleep(200);
-				}
+	
 				errorManager.sendToMail(mailTo);
 				if (regularJob) {
 					updateList();
