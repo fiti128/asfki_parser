@@ -16,18 +16,18 @@ public class AsfkiFilter extends FilterInputStream {
 		int total=start+retLen;
 		for(int i=start;i<total;++i){
 			char currentChar=(char)arg0[i];
-			if(currentChar>=0 && currentChar<' '){
+			if(currentChar >= 0 && currentChar < ' '){
 				System.err.println("fixup1:"+currentChar); 
 				arg0[i]=' ';
 			}
-			if((flag<=0 && currentChar=='>') ||	(flag>=1 && currentChar=='<')){
-				System.err.print("fixup1<>:"+arg0[i]+"@"+i);
+			if((flag <= 0 && currentChar == '>') ||	(flag >= 1 && currentChar == '<')){
+				System.err.print("fixup1<>:" + arg0[i] + "@" +i);
 				arg0[i]='_';
-				System.err.println(" fixed1<>:"+arg0[i]);
-				System.err.write(arg0,(i>10)?i-10:i,(i<total-20)?30:total-i);
+				System.err.println(" fixed1<>:" + arg0[i]);
+				System.err.write(arg0,(i > 10) ? i-10 :i,(i < total-20) ? 30: total-i);
 			}
-			if(currentChar=='<'){ 
-				if(i<total-1){
+			if(currentChar == '<'){ 
+				if(i < total-1){
 					char nextChar=(char)arg0[i+1];
 					if (nextChar<'A' && nextChar!='/' && nextChar!='?') {
 						System.err.print("fixup1.1<>:"+currentChar+"@"+i);
@@ -36,7 +36,7 @@ public class AsfkiFilter extends FilterInputStream {
 					} else 	flag++;
 				} else 	flag++;
 			}
-			if(currentChar=='>') 
+			if(currentChar == '>') 
 				flag--;
 		}
 		return retLen;
