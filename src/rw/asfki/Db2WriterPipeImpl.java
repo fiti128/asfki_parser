@@ -52,8 +52,8 @@ public class Db2WriterPipeImpl implements Db2Writer {
 	@Override
 	public void writeLine(List<String> stringList) throws Exception {
 		StringBuilder sb = new StringBuilder();
+		sb.setLength(0);
 		for (int i = 0; i < stringList.size() - 1; i++) {
-			sb.setLength(0);
 			sb.append(stringList.get(i)).append(columnDelimeter);
 		}
 			sb.append(stringList.get(stringList.size() - 1));

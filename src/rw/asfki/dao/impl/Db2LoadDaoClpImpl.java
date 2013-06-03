@@ -86,7 +86,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
 			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
 			.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
-			.append(" REPLACE INTO ").append(schema).append(".").append(table);
+			.append(" REPLACE INTO ").append(schema).append(".").append(table).append(" DATA BUFFER 10000");
 		String loadCommand = sb.toString();
 		
 		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
