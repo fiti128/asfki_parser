@@ -51,8 +51,9 @@ public class SimpleTimestampFormat extends TimestampFormat {
 		}
 		
 		Timestamp ts = null;
-		
-		if (nanoLength == 6 && source.length()== 26) {
+
+//		if (nanoLength == 6 && source.length()== 26) {
+			if (nanoLength == 6) {
 			char[] chars = beforeFormatDate.toCharArray();
 		    chars[10] = ' ';
 		    chars[13] = ':';
@@ -66,6 +67,7 @@ public class SimpleTimestampFormat extends TimestampFormat {
 		SimpleDateFormat parserSDF = new SimpleDateFormat(cutFormatToParse);
 		Date date;
 		try {
+			System.out.println(cutFormatDate);
 			date = parserSDF.parse(cutFormatDate);
 			ts = new Timestamp(date.getTime());
 			String nanos = beforeFormatDate.substring(beforeFormatDate.length() - nanoLength);

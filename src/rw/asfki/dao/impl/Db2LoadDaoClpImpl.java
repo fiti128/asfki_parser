@@ -1,12 +1,19 @@
 package rw.asfki.dao.impl;
 
+
+
+
+
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -23,7 +30,7 @@ import rw.asfki.error.ErrorManager;
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	protected static Logger logger = Logger.getLogger("service");
 	private ErrorManager errorManager;
-	private int counter = 0;
+	static int counter = 0;
 	private String batchFileName;
 	private String scriptFileName;
 	private ProcessBuilder processBuilder;
@@ -33,22 +40,24 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	private File scriptFile;
 	
 	
+	
 	private Db2LoadDaoClpImpl(Properties props, ErrorManager errorManager) throws IOException {
 		this.errorManager = errorManager;
 		this.db2properties = props;
-		tempDir = new File(props.getProperty("tempFolder", "temp"));
+		tempDir = new File("temp");
 		if (!tempDir.isDirectory()) {
 			tempDir.mkdir();
 		}
-		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
+		
+//		batchFileName = Integer.toHexString(this.hashCode()) + ".bat";
 		scriptFileName = Integer.toHexString(this.hashCode()) +".db2";
 		scriptFile = new File(tempDir, scriptFileName);
-		batchFile = new File(tempDir,batchFileName);
-		FileWriter fw = new FileWriter(batchFile, false);
-		fw.write("db2 -t -f " + scriptFileName);
-		fw.close();
-		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd","/w","/c","/i", batchFileName);
-		processBuilder.directory(batchFile.getParentFile());
+//		batchFile = new File(tempDir,batchFileName);
+//		FileWriter fw = new FileWriter(batchFile, false);
+//		fw.write("db2 -t -f " + scriptFileName);
+//		fw.close();
+		ProcessBuilder processBuilder = new ProcessBuilder("db2.exe","-t","-f", scriptFileName);
+		processBuilder.directory(scriptFile.getParentFile());
 		this.processBuilder = processBuilder;
 			
 	}
@@ -64,9 +73,41 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	}
 
 	@Override
-	public void loadFile(Db2FileLoadProps db2File) throws SQLException {
-		// TODO Auto-generated method stub
+	public void loadFile(Db2FileLoadProps props) throws SQLException {
+		
+		String delimeter = props.getDelimeter();
+		delimeter = toDb2Hex(delimeter);
+		String absPathToLogFolder = props.getAbsPathToLogFolder();
+		String schema = props.getSchema();
+		String table = props.getTable();
+		
+		File logFile = new File(absPathToLogFolder, table + "_log.txt");
+		StringBuilder sb = new StringBuilder();
+		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
+			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
+			.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
+			.append(" REPLACE INTO ").append(schema).append(".").append(table).append(" DATA BUFFER 10000");
+		String loadCommand = sb.toString();
+		
+		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
+		
+		logger.info(table + " start loading\n" + loadCommand);
+		try {
+			Process process = pb.start();
+			int errorlevel = process.waitFor();
+			if (errorlevel > 0) {
+				logger.error(table + " proccessed with errors");
+				errorManager.addErrorFile(logFile);
 
+			} else {
+				logger.info(table + " loaded");
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		int size = UpdateAsfkiFilesJob.LIST_SIZE;
+		counter++;
+		logger.info("Files remaining: " + (size - counter) + " from " + size);
 	}
 
 	@Override
@@ -126,10 +167,11 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			String absPathToLogFolder = props.getAbsPathToLogFolder();
 			String schema = props.getSchema();
 			String table = props.getTable();
+			
 			File logFile = new File(absPathToLogFolder, table + "_log.txt");
 			StringBuilder sb = new StringBuilder();
-			sb.append("LOAD FROM ").append("\"").append(absPathToFile).append("\"")
-				.append(" OF DEL modified by nochardel coldel").append(delimeter)
+			sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("1\"")
+				.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
 				.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
 				.append(" REPLACE INTO ").append(schema).append(".").append(table).append(";");
 			String loadCommand = sb.toString();
@@ -146,8 +188,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			// Перезаписываем load script файл
 			
 			BufferedWriter bw = new BufferedWriter(new FileWriter(scriptFile,false));
-			bw.write(connectCommand);
-			bw.newLine();
+//			bw.write(connectCommand);
+//			bw.newLine();
 			bw.write(loadCommand);
 			bw.close();
 			

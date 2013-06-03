@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -36,6 +37,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
+import org.tukaani.xz.XZInputStream;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -181,9 +183,9 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			Map<String, Timestamp> newMap = new HashMap<String, Timestamp>();
 			for (ASFKI_RowColumn asfki_RowColumn : downloadedList) {
 				String key = asfki_RowColumn.getBody();
-				String pattern = asfki_RowColumn.getAttributes().get("format");
-				String correctionTime = asfki_RowColumn.getAttributes().get("cor_time");
-				SimpleTimestampFormat stf = new SimpleTimestampFormat(pattern);
+				String pattern = asfki_RowColumn.getAttributes().get("dateFormat");
+				String correctionTime = asfki_RowColumn.getAttributes().get("changedDate");
+				SimpleTimestampFormat stf = new SimpleTimestampFormat();
 				Timestamp value = stf.parse(correctionTime);
 				newMap.put(key, value);
 				listToCompare.add(key);
@@ -218,6 +220,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				Timestamp oldTimeToCompare = (oldMap.get(key) == null) ? defaultTs : oldMap.get(key);
 				Timestamp newTimeToCompare = newMap.get(key);
 				if (newTimeToCompare.after(oldTimeToCompare)) {
+					System.out.println(spisokUrlFolder + key + archiveExtention);
 					URL url = new URL(spisokUrlFolder + key + archiveExtention);
 					listToUpdate.add(url);
 				}
@@ -280,7 +283,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		return list;
 	}
 	private void updateList() throws JAXBException {
-		
+		// Преобразуем апдейт лист в свою схему (просто копируем новые даные)
 		Root root = new Root();
 		SpisokRow row = new SpisokRow();
 		List<SpisokColumn> spisokColumnList = new ArrayList<SpisokColumn>();
@@ -397,16 +400,16 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		this.rowTag = rowTag;
 	}
 
-	private void convert(URL url, File db2File) throws Exception {
-		   ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()));
-    	//get the zipped file list entry
-    	    zis.getNextEntry();
-        	
+	private void convert(URL url, Db2FileLoadProps db2FileProps) throws Exception {
+
     		XMLReader xr = XMLReaderFactory.createXMLReader();
-    		Db2Writer writer = new Db2WriterImpl(new BufferedWriter(new FileWriter(db2File,false)));
+
+
+    		Db2Writer writer = new Db2WriterPipeImpl(db2FileProps ,delimeter);
     		AsfkiHandler asfkiHandler = AsfkiHandler.getInstance(writer, rowTag, columnTag);
     		xr.setContentHandler(asfkiHandler);
-//    		is =             new InputSource(new InputStreamReader(new AsfkiFilter(new FileInputStream(unzipedFile)) ,"UTF-8"));
+    		
+    		XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
     		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis) ,"UTF-8"));
                   
     		xr.parse(is);
@@ -416,10 +419,10 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
     		zis.close();
 	}
 	
-	private void processUrl(URL url, Queue<Db2FileLoadProps> db2Queue) throws Exception {
+	private void processUrl(URL url) throws Exception {
 		
 		String fileNameWithExtention = new File(url.getPath()).getName();
-		String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-4);
+		String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
 		
 		String db2FilePath = tempFolder + "/" + fileName + db2lExtention;
 		File db2File = createFile(db2FilePath);
@@ -434,16 +437,12 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
 		db2fProperties.setTable(fileName);
 
-		convert(url, db2File);
+		convert(url, db2fProperties);
 		
 		logger.info(db2File.getAbsolutePath() + " konverted");
 		
 		// Offer to list complete details to load this file to db
-		db2Queue.offer(db2fProperties);
-		// Notifying another threads of new element in the queue
-		synchronized(db2Queue) {
-			db2Queue.notify();
-		}
+
 	
 	}
 	
@@ -466,7 +465,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			StringBuilder sb = new StringBuilder();
 			for (URL url : list) {
 				String fileNameWithExtention = new File(url.getPath()).getName();
-				String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-4);
+				String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
 				sb.append(fileName).append(" ");
 			}
 			// Показать в логе список таблиц, требующих обновления
@@ -477,28 +476,34 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			
 			if (list.size() > 0) {
 				ErrorManager errorManager = new ErrorManager(new File(errorFolder));
-				Queue<Db2FileLoadProps> db2Queue = new PriorityBlockingQueue<Db2FileLoadProps>();
-				Properties databaseProperties = new Properties();
-				databaseProperties.setProperty("database", database);
-				databaseProperties.setProperty("user", user);
-				databaseProperties.setProperty("password", password);
-				databaseProperties.setProperty("schema", schema);
-				databaseProperties.setProperty("tempFolder", tempFolder);
-				Db2LoadFromQueueTask db2Task = new Db2LoadFromQueueTask(db2Queue, databaseProperties, errorManager);
-				db2Task.start();
-				Thread.yield();
+				final List<URL> additionalList = new ArrayList<URL>();
+				for (int i = 0; i < list.size()/2; i++) {
+					additionalList.add(list.get(i));
+					list.remove(i);
+				}
+				Thread additional = new Thread(new Runnable() {
+					public void run() {
+						for (URL url : additionalList) {
+							try {
+								processUrl(url);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				});
+				additional.start();
 				
 				for (URL url : list) {
-					processUrl(url, db2Queue);
+					processUrl(url);
 				} 
-				// end of list
 				
-			
-				db2Task.stop();
-				// Just to handle bug of terminating jvm without waiting all threads end their work
-				while (db2Task.isAlive()) {
+				while (additional.isAlive()) {
 					Thread.sleep(200);
 				}
+			
+	
 				errorManager.sendToMail(mailTo);
 				if (regularJob) {
 					updateList();

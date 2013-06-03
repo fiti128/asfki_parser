@@ -24,8 +24,8 @@ import rw.asfki.util.UsefulMethods;
 
 
 public class ErrorManager {
-	Properties props;
-	File errorDir;
+	static Properties props;
+	static File errorDir;
 	
 	public ErrorManager(File errorDir) {
 		this.errorDir = errorDir;

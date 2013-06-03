@@ -16,6 +16,12 @@ public class AsfkiFilter extends FilterInputStream {
 		int total=start+retLen;
 		for(int i=start;i<total;++i){
 			char currentChar=(char)arg0[i];
+
+			if(currentChar == '|') {
+				System.err.println("| detected");
+				arg0[i]=' ';
+			}
+
 			if(currentChar >= 0 && currentChar < ' '){
 				System.err.println("fixup1:"+currentChar); 
 				arg0[i]=' ';
