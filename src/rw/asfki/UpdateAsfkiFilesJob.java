@@ -7,13 +7,11 @@
 package rw.asfki;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
+
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,10 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Queue;
+
 import java.util.Set;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.zip.ZipInputStream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -476,34 +472,11 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			
 			if (list.size() > 0) {
 				ErrorManager errorManager = new ErrorManager(new File(errorFolder));
-				final List<URL> additionalList = new ArrayList<URL>();
-				for (int i = 0; i < list.size()/2; i++) {
-					additionalList.add(list.get(i));
-					list.remove(i);
-				}
-				Thread additional = new Thread(new Runnable() {
-					public void run() {
-						for (URL url : additionalList) {
-							try {
-								processUrl(url);
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-				});
-				additional.start();
 				
 				for (URL url : list) {
 					processUrl(url);
 				} 
 				
-				while (additional.isAlive()) {
-					Thread.sleep(200);
-				}
-			
-	
 				errorManager.sendToMail(mailTo);
 				if (regularJob) {
 					updateList();
