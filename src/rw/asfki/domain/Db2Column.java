@@ -4,11 +4,11 @@ import java.sql.Types;
 
 public class Db2Column {
 
-	
+	private String name;
 	private int dataType;
 	private int size;
 	private int decimalDigits;
-	private boolean nullable;
+	private int nullable;
 	
 	private int sizeMultiplier;
 	
@@ -54,24 +54,33 @@ public class Db2Column {
 	public void setDecimalDigits(int decimalDigits) {
 		this.decimalDigits = decimalDigits;
 	}
-	public boolean isNullable() {
-		return nullable;
-	}
-	public void setNullable(boolean nullable) {
-		this.nullable = nullable;
-	}
+
 
 	
+	public int getNullable() {
+		return nullable;
+	}
+	public void setNullable(int nullable) {
+		this.nullable = nullable;
+	}
 	public int getSizeMultiplier() {
 		return sizeMultiplier;
 	}
 	public void setSizeMultiplier(int sizeMultiplier) {
 		this.sizeMultiplier = sizeMultiplier;
 	}
+	
+	
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
 	@Override
 	public String toString() {
 		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
-		String nullableString = (nullable) ? "": " not null";
+		String nullableString = (nullable == 1) ? "": " not null";
 		String printDetails = "";
 		
 		switch(dataType) {
