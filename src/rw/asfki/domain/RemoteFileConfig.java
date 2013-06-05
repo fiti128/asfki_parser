@@ -1,49 +1,38 @@
 package rw.asfki.domain;
 
 public class RemoteFileConfig {
-	private String rootTag;
-	private String tableNameAttribute;
-	private String schemaNameAttribute;
-	private String columnRowsRootTag;
-	private String rowsTag;
+	private String tableTag;
+	private String columnsRootTag;
 	private String columnTag;
 	
-	private String typeAttribute;
-	private String sizeAttribute;
-	private String commentAttribute;
-	private String nullableAttribute;
-	private String formatAttribute;
-	private String decimalDigitsAttribute;
-	public String getRootTag() {
-		return rootTag;
-	}
-	public void setRootTag(String rootTag) {
-		this.rootTag = rootTag;
+	private TableAttributes tableAttributes;
+	private ColumnAttributes columnAttributes;
+	
+	private RemoteFileConfig(String tableTag, TableAttributes tableAttributes,
+			String columnRootTag, String columnTag, ColumnAttributes columnAttributes){
+		this.tableTag = tableTag;
+		this.columnsRootTag = columnRootTag;
+		this.columnTag = columnTag;
+		this.tableAttributes = tableAttributes;
+		this.columnAttributes = columnAttributes;
 	}
 	
-	public String getTableNameAttribute() {
-		return tableNameAttribute;
+	public static RemoteFileConfig getInstance(String tableTag, TableAttributes tableAttributes,
+			String columnRootTag, String columnTag, ColumnAttributes columnAttributes) {
+		return new RemoteFileConfig(tableTag, tableAttributes, columnRootTag, columnTag, columnAttributes);
 	}
-	public void setTableNameAttribute(String tableNameAttribute) {
-		this.tableNameAttribute = tableNameAttribute;
+	
+	public String getTableTag() {
+		return tableTag;
 	}
-	public String getSchemaNameAttribute() {
-		return schemaNameAttribute;
+	public void setTableTag(String tableTag) {
+		this.tableTag = tableTag;
 	}
-	public void setSchemaNameAttribute(String schemaNameAttribute) {
-		this.schemaNameAttribute = schemaNameAttribute;
+	public String getColumnsRootTag() {
+		return columnsRootTag;
 	}
-	public String getColumnRowsRootTag() {
-		return columnRowsRootTag;
-	}
-	public void setColumnRowsRootTag(String columnRowsRootTag) {
-		this.columnRowsRootTag = columnRowsRootTag;
-	}
-	public String getRowsTag() {
-		return rowsTag;
-	}
-	public void setRowsTag(String rowsTag) {
-		this.rowsTag = rowsTag;
+	public void setColumnsRootTag(String columnsRootTag) {
+		this.columnsRootTag = columnsRootTag;
 	}
 	public String getColumnTag() {
 		return columnTag;
@@ -51,41 +40,20 @@ public class RemoteFileConfig {
 	public void setColumnTag(String columnTag) {
 		this.columnTag = columnTag;
 	}
-	public String getTypeAttribute() {
-		return typeAttribute;
+	public TableAttributes getTableAttributes() {
+		return tableAttributes;
 	}
-	public void setTypeAttribute(String typeAttribute) {
-		this.typeAttribute = typeAttribute;
+	public void setTableAttributes(TableAttributes tableAttributes) {
+		this.tableAttributes = tableAttributes;
 	}
-	public String getSizeAttribute() {
-		return sizeAttribute;
+	public ColumnAttributes getColumnAttributes() {
+		return columnAttributes;
 	}
-	public void setSizeAttribute(String sizeAttribute) {
-		this.sizeAttribute = sizeAttribute;
+	public void setColumnAttributes(ColumnAttributes columnAttributes) {
+		this.columnAttributes = columnAttributes;
 	}
-	public String getCommentAttribute() {
-		return commentAttribute;
-	}
-	public void setCommentAttribute(String commentAttribute) {
-		this.commentAttribute = commentAttribute;
-	}
-	public String getNullableAttribute() {
-		return nullableAttribute;
-	}
-	public void setNullableAttribute(String nullableAttribute) {
-		this.nullableAttribute = nullableAttribute;
-	}
-	public String getFormatAttribute() {
-		return formatAttribute;
-	}
-	public void setFormatAttribute(String formatAttribute) {
-		this.formatAttribute = formatAttribute;
-	}
-	public String getDecimalDigitsAttribute() {
-		return decimalDigitsAttribute;
-	}
-	public void setDecimalDigitsAttribute(String decimalDigitsAttribute) {
-		this.decimalDigitsAttribute = decimalDigitsAttribute;
-	}
+	
+	
+
 	
 }

@@ -32,27 +32,39 @@ public class TableMetaDataRetriever extends DefaultHandler {
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
-		if (qName.equalsIgnoreCase(config.getRootTag())) {
+		if (qName.equalsIgnoreCase(config.getTableTag())) {
 			db2Table = new Db2Table();
-			db2Table.setName(attributes.getValue(config.getTableNameAttribute()));
-			db2Table.setSchema(attributes.getValue(config.getSchemaNameAttribute()));
+			db2Table.setName(attributes.getValue(
+					config.getTableAttributes().
+					getTableNameAttribute()));
+			db2Table.setSchema(attributes.getValue(
+					config.getTableAttributes().
+					getSchemaNameAttribute()));
 		}
-		if (qName.equalsIgnoreCase(config.getColumnRowsRootTag())) {
+		if (qName.equalsIgnoreCase(config.getColumnsRootTag())) {
 			columnlist = new ArrayList<Db2Column>();
 		}
 		if (qName.equalsIgnoreCase(config.getColumnTag())) {
 			
 			db2Column = new Db2Column();
-			db2Column.setDataType(attributes.getValue(config.getTypeAttribute()));
-			String size = attributes.getValue(config.getSizeAttribute());
+			db2Column.setDataType(attributes.getValue(
+					config.getColumnAttributes().
+					getTypeAttribute()));
+			String size = attributes.getValue(
+					config.getColumnAttributes().
+					getSizeAttribute());
 			if (size != null) {
 				db2Column.setSize(Integer.valueOf(size).intValue());
 			}
-			String nullable = attributes.getValue(config.getNullableAttribute());
+			String nullable = attributes.getValue(
+					config.getColumnAttributes().
+					getNullableAttribute());
 			nullable = (nullable == null) ? "0" : nullable;
 			db2Column.setNullable(Integer.valueOf(nullable).intValue());
 			if (db2Column.getDataType() == Types.DECIMAL) {
-				String decimalDigits = attributes.getValue(config.getDecimalDigitsAttribute());
+				String decimalDigits = attributes.getValue(
+						config.getColumnAttributes().
+						getDecimalDigitsAttribute());
 				db2Column.setDecimalDigits(Integer.valueOf(decimalDigits).intValue());
 			}
 		}
@@ -69,7 +81,7 @@ public class TableMetaDataRetriever extends DefaultHandler {
 			}
 		}
 		
-		if (qName.equalsIgnoreCase(config.getColumnRowsRootTag())) {
+		if (qName.equalsIgnoreCase(config.getColumnsRootTag())) {
 			db2Table.setColumns(columnlist);
 			tableList.add(db2Table);
 			throw new ExpectedSaxException("Все в поряде");
