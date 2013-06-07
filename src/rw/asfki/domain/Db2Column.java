@@ -8,7 +8,9 @@ public class Db2Column {
 	private int dataType;
 	private int size;
 	private int decimalDigits;
+	private int decimalPrecision;
 	private int nullable;
+	private int scale;
 	
 	private int sizeMultiplier;
 	
@@ -55,8 +57,18 @@ public class Db2Column {
 		this.decimalDigits = decimalDigits;
 	}
 
-
-	
+	public int getDecimalPrecision() {
+		return decimalPrecision;
+	}
+	public void setDecimalPrecision(int decimalPrecision) {
+		this.decimalPrecision = decimalPrecision;
+	}
+	public int getScale() {
+		return scale;
+	}
+	public void setScale(int scale) {
+		this.scale = scale;
+	}
 	public int getNullable() {
 		return nullable;
 	}
@@ -76,6 +88,39 @@ public class Db2Column {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	
+	
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + dataType;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + nullable;
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Db2Column other = (Db2Column) obj;
+		if (dataType != other.dataType)
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (nullable != other.nullable)
+			return false;
+		return true;
 	}
 	@Override
 	public String toString() {
@@ -99,6 +144,7 @@ public class Db2Column {
 				
 									
 			case Types.CHAR: 
+								columnSize = (columnSize > 254) ? 254 : columnSize;
 								printDetails = new StringBuilder().
 									append("CHAR(").
 									append(columnSize).
@@ -113,16 +159,20 @@ public class Db2Column {
 			case Types.DECIMAL: 
 								printDetails = new StringBuilder().
 								append("DECIMAL(").
+								append(decimalPrecision).
+								append(",").
 								append(decimalDigits).
 								append(")").toString();
 								break;
 			default:
 								break;
 		}
-		printDetails = printDetails + nullableString;
+		StringBuilder sb = new StringBuilder();
+		sb.append(name).append(" ").append(printDetails).append(nullableString);
 		
-		return printDetails;
+		return sb.toString();
 	}
+	
 	
 	
 

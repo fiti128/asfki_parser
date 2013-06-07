@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.domain.Db2Table;
 /**
  * JDBC Реализация интерфейса <code>DB2LoadDAO</code>.
  * <p>
@@ -195,6 +196,12 @@ public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
 		}
 		   db2HexDelimeter = "0x" + db2HexDelimeter;
 		return db2HexDelimeter;
+	}
+
+	@Override
+	public void createTable(Db2Table db2Table) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

@@ -24,11 +24,11 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	private ErrorManager errorManager;
 	static int counter = 0;
 	private File tempDir;
-
+//	private  Db2LoadDaoClpImpl instance;
 	
 	
 	
-	private Db2LoadDaoClpImpl(Properties props, ErrorManager errorManager) throws IOException {
+	private Db2LoadDaoClpImpl(ErrorManager errorManager) throws IOException {
 		this.errorManager = errorManager;
 		tempDir = new File("temp");
 		if (!tempDir.isDirectory()) {
@@ -37,8 +37,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	
 	}
 	
-	public static Db2LoadDaoClpImpl getInstance(Properties props, ErrorManager errorManager) throws IOException {
-		return new Db2LoadDaoClpImpl(props,errorManager);
+	public static Db2LoadDaoClpImpl getInstance(ErrorManager errorManager) throws IOException {
+		return new Db2LoadDaoClpImpl(errorManager);
 	}
 	@Override
 	public void loadFile(String absPathToFile, String delimeter,
@@ -47,13 +47,13 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		// TODO
 
 	}
-	
+	@Override
 	public void createTable(Db2Table db2Table) {
 		
 		// Создаем строку команды
 		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE TABLE ").append(db2Table)
-			.append(" ( ");
+			.append(" (");
 		List<Db2Column> list = db2Table.getColumns();
 		for (Db2Column db2Column : list) {
 			sb.append(db2Column);
@@ -63,6 +63,21 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		sb.append(")");
 		String createTableCommand = sb.toString();
 		
+		// Создаем строку удаления
+		sb.setLength(0);
+		String dropTableCommand = sb.append("DROP TABLE ").append(db2Table).toString();
+		ProcessBuilder processBuilder = new ProcessBuilder("db2.exe", dropTableCommand);
+		try {
+			processBuilder.start().waitFor();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		
+		// Вводим команду удаления таблицы
+		
+		
 		// Вводим команду в окружении дб2. Выводим сообщение в лог об успешности/неуспешности
 		ProcessBuilder pb = new ProcessBuilder("db2.exe", createTableCommand);
 		logger.info("Trying to create " + db2Table);
@@ -71,6 +86,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			int errorlevel = process.waitFor();
 			if (errorlevel > 0) {
 				logger.error(db2Table + " was not created");
+				logger.error("Create command: " + createTableCommand);
 
 			} else {
 				logger.info(db2Table + " successfuly created");

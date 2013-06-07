@@ -36,7 +36,7 @@ public class Db2WriterPipeImpl implements Db2Writer {
 	    	new Thread(new Runnable(){
 	    		public void run() {
 	    			try {
-						DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(null, new ErrorManager(new File("error")));
+						DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(new ErrorManager(new File("error")));
 						db2LoadDao.loadFile(db2File);
 					} catch (IOException e) {
 						throw new RuntimeException(e);

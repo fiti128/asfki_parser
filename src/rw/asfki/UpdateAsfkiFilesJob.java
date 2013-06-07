@@ -27,6 +27,9 @@ import java.util.Properties;
 
 import java.util.Set;
 
+
+
+import javax.sql.DataSource;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -35,19 +38,32 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.log4j.Logger;
 import org.tukaani.xz.XZInputStream;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
+import rw.asfki.dao.DB2LoadDAO;
+import rw.asfki.dao.InfoDao;
+import rw.asfki.dao.DaoFactory;
+import rw.asfki.dao.YanushDataSource;
 import rw.asfki.domain.ASFKI_RowColumn;
+import rw.asfki.domain.ColumnAttributes;
+import rw.asfki.domain.Db2Column;
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.domain.Db2Table;
+import rw.asfki.domain.RemoteFileConfig;
+import rw.asfki.domain.TableAttributes;
 import rw.asfki.error.ErrorManager;
 import rw.asfki.filters.AsfkiFilter;
 import rw.asfki.sax.AsfkiHandler;
+import rw.asfki.sax.ExpectedSaxException;
+import rw.asfki.sax.TableMetaDataRetriever;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UsefulMethods;
+
 
 /**
  * Класс объединяющий все операции для выполнения одной задачи - 
@@ -84,6 +100,8 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String user;
 	private String password;
 	private String database;
+	private String dbUrl;
+	private String driver;
 	private List<ASFKI_RowColumn> downloadedList;
 	private List<String> spisokRowAttributes = new ArrayList<String>();
 	private List<String> spisokColumnAttributes = new ArrayList<String>();	
@@ -395,8 +413,55 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	public void setRowTag(String rowTag) {
 		this.rowTag = rowTag;
 	}
+	private RemoteFileConfig getConfig() {
+		
+		String tableTag = "table";
+		String tableNameAttribute = "originalName";
+		String schemaNameAttribute = "originalSchema";
+		String columnRootTag = "thead";
+		String columnTag = "th";
+		String typeAttribute = "type";
+		String sizeAttribute = "length";
+		String commentAttribute = "comment";
+		String nullableAttribute ="isNullable";
+		String formatAttribute = "format";
+		String decimalDigitsAttribute = "";
+		String decimalScaleAttribute = "scale";
+		String decimalPrecisionAttribute = "precision";
+		
+		RemoteFileConfig config = RemoteFileConfig.
+			getInstance(tableTag, 
+					TableAttributes.getInstance(tableNameAttribute, schemaNameAttribute),
+					columnRootTag,
+					columnTag,
+					ColumnAttributes.getInstance(
+							typeAttribute,
+							sizeAttribute,
+							commentAttribute,
+							nullableAttribute,
+							formatAttribute,
+							decimalDigitsAttribute,
+							decimalScaleAttribute,
+							decimalPrecisionAttribute));
+		return config;
+	}
 
-	private void convert(URL url, Db2FileLoadProps db2FileProps) throws Exception {
+	private void updateExternalMetaData(RemoteFileConfig config, URL url, List<Db2Table> externalTablesList) throws SAXException, IOException {
+		TableMetaDataRetriever handler = TableMetaDataRetriever.getInstance(externalTablesList, config);
+		XMLReader xr = XMLReaderFactory.createXMLReader();
+		xr.setContentHandler(handler);
+		
+		XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
+		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis) ,"UTF-8"));
+	
+		try {
+			xr.parse(is);
+		} catch (ExpectedSaxException e) {
+			System.out.println(e.getMessage());
+		}
+		
+	}
+	private void convertAndLoadToDb(URL url, Db2FileLoadProps db2FileProps) throws Exception {
 
     		XMLReader xr = XMLReaderFactory.createXMLReader();
 
@@ -433,7 +498,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		db2fProperties.setAbsPathToFile(db2FilePathForLoad);
 		db2fProperties.setTable(fileName);
 
-		convert(url, db2fProperties);
+		convertAndLoadToDb(url, db2fProperties);
 		
 		logger.info(db2File.getAbsolutePath() + " konverted");
 		
@@ -458,14 +523,26 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				list.addAll(parseUrls(additionalUrls));
 			}
 			
+			
+			// Создаем строку для вывода всех таблиц требующих обновления,
+			// плюс создаем список для сравнения метаданных
+			List<Db2Table> localTablesList = new ArrayList<Db2Table>();
 			StringBuilder sb = new StringBuilder();
 			for (URL url : list) {
 				String fileNameWithExtention = new File(url.getPath()).getName();
-				String fileName = fileNameWithExtention.substring(0, fileNameWithExtention.length()-archiveExtention.length());
+				String fileName = fileNameWithExtention.substring(
+						0, fileNameWithExtention.length()-archiveExtention.length());
+				Db2Table db2Table = new Db2Table();
+				db2Table.setName(fileName);
+				db2Table.setSchema(schema);
+				localTablesList.add(db2Table);
+				List<Db2Column> colList = new ArrayList<Db2Column>();
+				db2Table.setColumns(colList);
 				sb.append(fileName).append(" ");
 			}
 			// Показать в логе список таблиц, требующих обновления
 			logger.info("Table files to update: " + sb.toString());
+			
 			
 			// Update table
 			LIST_SIZE = list.size();
@@ -473,6 +550,40 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			if (list.size() > 0) {
 				ErrorManager errorManager = new ErrorManager(new File(errorFolder));
 				
+				// Выгружаем метаданные из локальной базы данных
+				DataSource dataSource = YanushDataSource.getInstance(user, password, driver, dbUrl);
+				InfoDao infoDao = DaoFactory.getInfoDao(dataSource);
+				infoDao.updateTablesMetaData(localTablesList);
+
+			
+				// Выгружаем метаданные из внешних файлов
+				List<Db2Table> externalTablesList = new ArrayList<Db2Table>();
+				RemoteFileConfig config = getConfig();
+				
+				for (URL url : list) {
+					updateExternalMetaData(config, url, externalTablesList);
+				}
+	
+				
+				// Обновляем структуру таблиц в базе данных
+					//Определяем список таблиц для обновления/создания
+				for (int i = 0; i < externalTablesList.size(); i++) {
+					
+					if (localTablesList.contains(externalTablesList.get(i))) {
+						externalTablesList.remove(i);
+						i--;
+					}
+				}
+					// Обновляем/создаем новые схемы таблиц в локальной базе
+				DB2LoadDAO dao = DaoFactory.getDbLoadDao(errorManager);
+				for (Db2Table db2Table : externalTablesList) {
+					List<Db2Column> columnList = db2Table.getColumns();
+					for (Db2Column db2Column : columnList) {
+						db2Column.setSizeMultiplier(2);
+					}
+					dao.createTable(db2Table);
+				}
+				// Собственно грузим данные в базу
 				for (URL url : list) {
 					processUrl(url);
 				} 
@@ -504,6 +615,9 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		logger.info("Затраченно времени: " + jobPrettyTime);
 	}
 	
+
+
+
 	public static void main(String[] args) throws MalformedURLException {
 		if (args.length == 0) {
 		new UpdateAsfkiFilesJob().run();

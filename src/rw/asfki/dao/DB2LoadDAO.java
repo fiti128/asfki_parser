@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Queue;
 
 import rw.asfki.domain.Db2FileLoadProps;
+import rw.asfki.domain.Db2Table;
 /**
  * »нтерфейс дл€ загрузки данных в базу данных, использу€ 
  * процедуру db2load. —ледует примин€ть с осторожностью, 
@@ -25,6 +26,10 @@ import rw.asfki.domain.Db2FileLoadProps;
  * @see #loadFile(String, String, String, String, String)
  * @see #loadFromQueue(Queue)
  * @see #cleanTables(List, String)
+ *
+ */
+/**
+ * @author Yanusheusky S.
  *
  */
 public interface DB2LoadDAO {
@@ -55,4 +60,11 @@ public interface DB2LoadDAO {
 	 */
 	public void loadFromQueue(Queue<Db2FileLoadProps> db2probs)
 			throws Exception;
+	
+	
+	/**
+	 *  —оздает таблицу
+	 * @param db2Table
+	 */
+	public void createTable(Db2Table db2Table);
 }

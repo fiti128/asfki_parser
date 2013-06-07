@@ -4,6 +4,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -13,6 +14,7 @@ import rw.asfki.domain.Db2Table;
 import rw.asfki.domain.RemoteFileConfig;
 
 public class TableMetaDataRetriever extends DefaultHandler {
+	protected static Logger logger = Logger.getLogger("Service");
 	private List<Db2Table> tableList;
 	private RemoteFileConfig config;
 	private String string;
@@ -50,11 +52,13 @@ public class TableMetaDataRetriever extends DefaultHandler {
 			db2Column.setDataType(attributes.getValue(
 					config.getColumnAttributes().
 					getTypeAttribute()));
-			String size = attributes.getValue(
-					config.getColumnAttributes().
-					getSizeAttribute());
-			if (size != null) {
-				db2Column.setSize(Integer.valueOf(size).intValue());
+			if (db2Column.getDataType() == Types.CHAR || db2Column.getDataType() == Types.VARCHAR) {
+				String size = attributes.getValue(
+						config.getColumnAttributes().
+						getSizeAttribute());
+				if (size != null) {
+					db2Column.setSize(Integer.valueOf(size).intValue());
+				}
 			}
 			String nullable = attributes.getValue(
 					config.getColumnAttributes().
@@ -64,9 +68,17 @@ public class TableMetaDataRetriever extends DefaultHandler {
 			if (db2Column.getDataType() == Types.DECIMAL) {
 				String decimalDigits = attributes.getValue(
 						config.getColumnAttributes().
-						getDecimalDigitsAttribute());
-				db2Column.setDecimalDigits(Integer.valueOf(decimalDigits).intValue());
+						getDecimalScaleAttribute());
+				int decimalDigitsInt = (decimalDigits == null)? 5 : Integer.valueOf(decimalDigits).intValue();
+				db2Column.setDecimalDigits(decimalDigitsInt);
+				String decimalPrecision = attributes.getValue(
+						config.getColumnAttributes().
+						getDecimalPrecisionAttribute());
+				int decimalPrecisionInt = (decimalPrecision == null)? 15: Integer.valueOf(decimalPrecision).intValue();
+				db2Column.setDecimalPrecision(decimalPrecisionInt);
+				
 			}
+			
 		}
 		
 	}
@@ -84,7 +96,7 @@ public class TableMetaDataRetriever extends DefaultHandler {
 		if (qName.equalsIgnoreCase(config.getColumnsRootTag())) {
 			db2Table.setColumns(columnlist);
 			tableList.add(db2Table);
-			throw new ExpectedSaxException("Все в поряде");
+			throw new ExpectedSaxException("Sax loaded metadata of " + db2Table.getName());
 		}
 	
 	}

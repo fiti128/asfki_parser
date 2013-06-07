@@ -60,7 +60,7 @@ public class Db2LoadFromQueueTask implements Runnable {
 	}
 	public Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, Properties props, ErrorManager errorManager) throws IOException {
 		this.queue = queue;
-		this.db2load = Db2LoadDaoClpImpl.getInstance(props,errorManager);
+		this.db2load = Db2LoadDaoClpImpl.getInstance(errorManager);
 	}
 	/**
 	 * Метод <code>isAlive()</code> показывает продолжает ли действовать поток этого класса.

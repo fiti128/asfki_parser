@@ -19,6 +19,7 @@ public class RemoteFileConfig {
 	
 	public static RemoteFileConfig getInstance(String tableTag, TableAttributes tableAttributes,
 			String columnRootTag, String columnTag, ColumnAttributes columnAttributes) {
+		
 		return new RemoteFileConfig(tableTag, tableAttributes, columnRootTag, columnTag, columnAttributes);
 	}
 	
