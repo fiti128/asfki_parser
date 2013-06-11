@@ -6,8 +6,10 @@ import java.io.InputStream;
 
 public class AsfkiFilter extends FilterInputStream {
 	private int flag=0;
-	public AsfkiFilter(InputStream arg0) {
+	private char delimeter;
+	public AsfkiFilter(InputStream arg0, char delimeter) {
 		super(arg0);
+		this.delimeter = delimeter;
 	}
 
 	@Override
@@ -17,9 +19,9 @@ public class AsfkiFilter extends FilterInputStream {
 		for(int i=start;i<total;++i){
 			char currentChar=(char)arg0[i];
 
-			if(currentChar == '|') {
-				System.err.println("| detected");
-				arg0[i]=' ';
+			if(currentChar == delimeter) {
+				System.err.println(delimeter + " detected");
+				arg0[i]='#';
 			}
 
 			if(currentChar >= 0 && currentChar < ' '){

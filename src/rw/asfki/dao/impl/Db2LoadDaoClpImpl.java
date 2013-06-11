@@ -108,7 +108,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		String schema = props.getSchema();
 		String table = props.getTable();
 		
-		File logFile = new File(absPathToLogFolder, table + "_log.txt");
+		File logFile = new File(absPathToLogFolder, table + ".txt");
 		StringBuilder sb = new StringBuilder();
 		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
 			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
@@ -118,7 +118,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		
 		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
 		
-		logger.info(table + " start loading\n" + loadCommand);
+		logger.info(table + " start loading");
 		try {
 			Process process = pb.start();
 			int errorlevel = process.waitFor();

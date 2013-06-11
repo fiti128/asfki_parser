@@ -90,16 +90,14 @@ public class Db2Column {
 		this.name = name;
 	}
 	
-	
-	
-	
+
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + dataType;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + nullable;
 		return result;
 	}
 	@Override
@@ -118,14 +116,14 @@ public class Db2Column {
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
-		if (nullable != other.nullable)
-			return false;
 		return true;
 	}
 	@Override
 	public String toString() {
 		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
 		String nullableString = (nullable == 1) ? "": " not null";
+		// TODO Db2 Load ignores 'with default'. It works only with inserts
+		nullableString = "";
 		String printDetails = "";
 		
 		switch(dataType) {
@@ -149,12 +147,18 @@ public class Db2Column {
 									append("CHAR(").
 									append(columnSize).
 									append(")").toString();
+								if (nullableString.length() > 1) {
+									nullableString = nullableString + " WITH DEFAULT ''";
+								}
 								break;
 			case Types.VARCHAR: 
 								printDetails = new StringBuilder().
 								append("VARCHAR(").
 								append(columnSize).
 								append(")").toString();
+								if (nullableString.length() > 1) {
+									nullableString = nullableString + " WITH DEFAULT ''";
+								}
 								break;
 			case Types.DECIMAL: 
 								printDetails = new StringBuilder().

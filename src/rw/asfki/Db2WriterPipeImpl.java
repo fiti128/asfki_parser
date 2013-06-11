@@ -19,34 +19,15 @@ public class Db2WriterPipeImpl implements Db2Writer {
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
 	private String lineSeparator; 
-	static final int ERROR_PIPE_CONNECTED = 535;
-	static final int ERROR_BROKEN_PIPE = 109;
 	private int namedPipeHandle;
-	private String pipeName; 
-	private int pipeBuffer = 131072; 
-	final Db2FileLoadProps db2File;
+
 	
-	public Db2WriterPipeImpl(final Db2FileLoadProps db2File, String columnDelimeter) {
-		this.pipeName = "\\\\.\\pipe\\" +db2File.getTable();
-		this.db2File = db2File;
+	public Db2WriterPipeImpl(int namedPipeHandle, String columnDelimeter) {
+		this.namedPipeHandle = namedPipeHandle;
 		this.columnDelimeter = columnDelimeter;
 		lineSeparator  = java.security.AccessController.doPrivileged(
 	            new sun.security.action.GetPropertyAction("line.separator"));
-	    if(createPipe()) {
-	    	new Thread(new Runnable(){
-	    		public void run() {
-	    			try {
-						DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(new ErrorManager(new File("error")));
-						db2LoadDao.loadFile(db2File);
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
-					}
-	    		}
-	    	}).start();
-	    	connectToPipe();
-	    }
+
 	}
 		
 	@Override
@@ -76,40 +57,7 @@ public class Db2WriterPipeImpl implements Db2Writer {
 		// TODO Auto-generated method stub
 
 	}
-	private boolean createPipe()
-	{
-		boolean ok = false;
-		namedPipeHandle = Pipes.CreateNamedPipe(pipeName, 0x00000003, 0x00000000, 2, pipeBuffer, pipeBuffer, 0xffffffff, 0);
-		if (namedPipeHandle == -1)
-		{
-			logger.info("CreateNamedPipe failed for " + pipeName + 
-					" for error " + " Message " + Pipes.FormatMessage(Pipes.GetLastError()));
-			ok = false;
-		} else
-		{
-			logger.info("Named Pipe " + pipeName + " created successfully Handle=" + namedPipeHandle);
-			ok = true;
-		}
-		return ok;
-	}
+
 	
-	private boolean connectToPipe()
-	{
-		logger.info("Waiting for a client to connect to pipe " + pipeName);
-		boolean connected = Pipes.ConnectNamedPipe(namedPipeHandle, 0);
-		if (!connected)
-		{
-			int lastError = Pipes.GetLastError();
-			if (lastError == ERROR_PIPE_CONNECTED)
-				connected = true;
-		}
-		if (connected)
-		{
-			logger.info("Connected to the pipe " + pipeName);
-		} else
-		{
-			logger.info("Falied to connect to the pipe " + pipeName);
-		}
-		return connected;
-	}
+
 }

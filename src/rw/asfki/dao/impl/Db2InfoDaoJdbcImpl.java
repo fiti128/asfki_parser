@@ -1,35 +1,39 @@
 package rw.asfki.dao.impl;
 
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 
-import javax.sql.DataSource;
-
+import org.apache.log4j.Logger;
 import rw.asfki.dao.InfoDao;
 import rw.asfki.domain.Db2Column;
 import rw.asfki.domain.Db2Table;
 
 public class Db2InfoDaoJdbcImpl implements InfoDao {
-	private DataSource dataSource;
+	protected Logger logger = Logger.getLogger("Service");
+	private Connection connection;
 	
-	private Db2InfoDaoJdbcImpl(DataSource dataSource) {
+	private Db2InfoDaoJdbcImpl(Connection connection) {
 		super();
-		this.dataSource = dataSource;
+		this.connection = connection;
 	}
 
-	public static InfoDao getInstance(DataSource dataSource) {
-		return new Db2InfoDaoJdbcImpl(dataSource);
+	public static InfoDao getInstance(Connection connection) {
+		return new Db2InfoDaoJdbcImpl(connection);
 	}
-
+	
+	
+	
 	@Override
 	public void updateTablesMetaData(List<Db2Table> db2TablesList) throws SQLException {
-		Connection connection = dataSource.getConnection();
+		logger.info("Getting local Meta Data");
 		DatabaseMetaData md = connection.getMetaData();
-		System.out.println("Connected");
 		ResultSet columnsResultSet = md.getColumns(
 				null, db2TablesList.get(0).getSchema(), null , null);
 		while(columnsResultSet.next()) {
@@ -49,7 +53,51 @@ public class Db2InfoDaoJdbcImpl implements InfoDao {
 				}
 			}
 		}
-		connection.close();
+		logger.info("Local Meta Data info updated");
+	}
+
+	@Override
+	public void createTable(Db2Table db2Table) throws SQLException {
+		// Создаем строку команды
+		StringBuilder sb = new StringBuilder();
+		sb.append("CREATE TABLE ").append(db2Table)
+			.append(" (");
+		List<Db2Column> list = db2Table.getColumns();
+		for (Db2Column db2Column : list) {
+			sb.append(db2Column);
+			sb.append(", ");
+		}
+		sb.delete(sb.length()-2, sb.length());
+		sb.append(")");
+		String createTableCommand = sb.toString();
+
+		// Создаем строку удаления
+		sb.setLength(0);
+		String dropTableCommand = sb.append("DROP TABLE ").append(db2Table).toString();
+		
+		Statement statement = connection.createStatement();
+		try {
+			statement.execute(dropTableCommand);
+		} catch (SQLException e) {
+			logger.info(db2Table + "isnt existing");
+		}
+		statement.clearWarnings();
+		try {
+			statement.execute(createTableCommand);
+		} catch (SQLException e) {
+			logger.error("loc message" + e.getLocalizedMessage());
+			logger.error("message" + e.getMessage());
+			throw e;
+		}
+		SQLWarning warnings = statement.getWarnings();
+		if (warnings !=	null) {
+			logger.error("Failed to create table");
+			logger.error(warnings.getMessage());
+		}
+		else {
+			logger.info(db2Table + " created");
+		}
+		statement.close();
 		
 	}
 

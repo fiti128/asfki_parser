@@ -1,5 +1,6 @@
 package rw.asfki.sax;
 
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,28 +8,36 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
+import rw.asfki.dao.InfoDao;
 import rw.asfki.domain.Db2Column;
 import rw.asfki.domain.Db2Table;
 import rw.asfki.domain.RemoteFileConfig;
 
 public class TableMetaDataRetriever extends DefaultHandler {
 	protected static Logger logger = Logger.getLogger("Service");
-	private List<Db2Table> tableList;
 	private RemoteFileConfig config;
 	private String string;
 	private Db2Table db2Table;
 	private Db2Column db2Column;
 	private ArrayList<Db2Column> columnlist;
+	private List<Db2Table> localTablesList;
+	private InfoDao infoDao;
+	private XMLReader xr;
+	private DefaultHandler handler; 
 	
-	private TableMetaDataRetriever(List<Db2Table> tableList, RemoteFileConfig config) {
-		this.tableList = tableList;
+	private TableMetaDataRetriever(List<Db2Table> localTablesList, InfoDao infoDao, RemoteFileConfig config, XMLReader xr, DefaultHandler handler) {
 		this.config = config;
+		this.infoDao = infoDao;
+		this.xr = xr;
+		this.handler = handler;
+		this.localTablesList = localTablesList;
 	}
 	
-	public static TableMetaDataRetriever getInstance(List<Db2Table> tableList, RemoteFileConfig config) {
-		return new TableMetaDataRetriever(tableList,config);
+	public static TableMetaDataRetriever getInstance(List<Db2Table> localTablesList,InfoDao infoDao, RemoteFileConfig config, XMLReader xr, DefaultHandler handler) {
+		return new TableMetaDataRetriever(localTablesList,infoDao,config,xr,handler);
 	}
 	
 	@Override
@@ -49,6 +58,7 @@ public class TableMetaDataRetriever extends DefaultHandler {
 		if (qName.equalsIgnoreCase(config.getColumnTag())) {
 			
 			db2Column = new Db2Column();
+			db2Column.setSizeMultiplier(2);
 			db2Column.setDataType(attributes.getValue(
 					config.getColumnAttributes().
 					getTypeAttribute()));
@@ -95,8 +105,15 @@ public class TableMetaDataRetriever extends DefaultHandler {
 		
 		if (qName.equalsIgnoreCase(config.getColumnsRootTag())) {
 			db2Table.setColumns(columnlist);
-			tableList.add(db2Table);
-			throw new ExpectedSaxException("Sax loaded metadata of " + db2Table.getName());
+			if (!localTablesList.contains(db2Table)) {
+				try {
+					infoDao.createTable(db2Table);
+				} catch (SQLException e) {
+					logger.error(e.getMessage());
+				}
+			}
+			logger.info("Setting loading handler");
+			xr.setContentHandler(handler);
 		}
 	
 	}
