@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 public class YanushDataSource implements DataSource {
-	protected static Logger logger = Logger.getLogger("service");
+	protected static Logger logger = Logger.getLogger(YanushDataSource.class);
 	private String username;
 	private String password;
 	private String driver;

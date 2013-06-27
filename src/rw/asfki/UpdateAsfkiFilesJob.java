@@ -40,16 +40,14 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.tukaani.xz.XZInputStream;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-
 import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
-import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.InfoDao;
 import rw.asfki.dao.DaoFactory;
 import rw.asfki.dao.YanushDataSource;
@@ -63,7 +61,6 @@ import rw.asfki.domain.TableAttributes;
 import rw.asfki.error.ErrorManager;
 import rw.asfki.filters.AsfkiFilter;
 import rw.asfki.sax.AsfkiHandler;
-import rw.asfki.sax.ExpectedSaxException;
 import rw.asfki.sax.TableMetaDataRetriever;
 import rw.asfki.util.SimpleTimestampFormat;
 import rw.asfki.util.UsefulMethods;
@@ -77,11 +74,13 @@ import rw.asfki.util.UsefulMethods;
  * @since 27.02.2013
  *
  */
+
 public class UpdateAsfkiFilesJob implements Runnable {
-	protected static Logger logger = Logger.getLogger("service");
+	protected static Logger logger = Logger.getLogger(UpdateAsfkiFilesJob.class);
 	private String errorFolder = "error";
 	public static int LIST_SIZE = 0;
 	private boolean regularJob;
+	private String config = "conf/parser.properties";
 	private String mailTo;
 	private String additionalUrls;
 	private String defaultTime;
@@ -103,38 +102,65 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String schema;
 	private String user;
 	private String password;
-	private String database;
+//	private String database;
 	private String dbUrl;
 	private String driver;
+	
+	// Table Meta Data with default values
+	private String metaTableTag = "table";
+	private String metaTableNameAttribute = "originalName";
+	private String metaSchemaNameAttribute = "originalSchema";
+	private String metaColumnRootTag = "thead";
+	private String metaColumnTag = "th";
+	private String metaTypeAttribute = "type";
+	private String metaSizeAttribute = "length";
+	private String metaCommentAttribute = "comment";
+	private String metaNullableAttribute ="isNullable";
+	private String metaFormatAttribute = "format";
+	private String metaDdecimalDigitsAttribute = "";
+	private String metaDecimalScaleAttribute = "scale";
+	private String metaDecimalPrecisionAttribute = "precision";
+	
 	private List<ASFKI_RowColumn> downloadedList;
 	private List<String> spisokRowAttributes = new ArrayList<String>();
 	private List<String> spisokColumnAttributes = new ArrayList<String>();
-	private boolean forceTableCreation;	
+	private boolean forceTableCreation;
+	private String args[];
 
+	
+	public UpdateAsfkiFilesJob(String args[]) {
+		this.args = args;
+	}
+	private void initArgs() {
+			Properties props;
+			props = parseCommandLine(args);
+			initParserProperties(props);
 
-	public UpdateAsfkiFilesJob(String args[]) throws MalformedURLException{
-		Properties props = parseCommandLine(args);
+	}
+	
+	private void initConfig() {
+		Properties props = null;
+		try {
+			props = UsefulMethods.loadProperties(config);
+		} catch (IOException e1) {
+			logger.error("Не смог прочитать файл с настройками: " + config );
+		}
 		initParserProperties(props);
 	}
 	
-	public UpdateAsfkiFilesJob() {
-		Properties props = null;
-		String configName = "parser.properties";
-		try {
-			props = UsefulMethods.loadProperties(configName);
-		} catch (IOException e1) {
-			logger.error("Не смог прочитать файл с настройками: " + configName );
-		}
-		initParserProperties(props);
-		initVmParams();
-	}
-	private Properties parseCommandLine(String[] args) throws MalformedURLException {
+	private Properties parseCommandLine(String[] args) {
+		Assert.assertNotNull("Args should not be null in parseCommandLine(String[] args)",args);
+		Assert.assertTrue("Args length should be greater than zero in parseCommandLine",args.length > 0);
 		Properties props = new Properties();
 		List<String> urls = new ArrayList<String>();
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-r"))  {
 				i++;
 				props.setProperty("rowTag", args[i]);
+			}
+			else if (args[i].equals("--regular")) {
+				i++;
+				props.setProperty("regularJob", args[i]);
 			}
 			else if (args[i].equals("-c")) {
 				i++;
@@ -156,6 +182,10 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				i++;
 				props.setProperty("schema", args[i]);
 			}
+			else if (args[i].equals("--config")) {
+				i++;
+				props.setProperty("config", args[i]);
+			}
 			else {
 				urls.add(args[i]);
 			}
@@ -169,9 +199,9 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		String additionalUrls = sb.toString();
 		props.setProperty("additionalUrls", additionalUrls);
 		Set<Entry<Object,Object>> set = props.entrySet();
-		System.out.println("Run configuration:");
+		logger.info("Run configuration:");
 		for (Entry<Object, Object> entry : set) {
-			System.out.println(entry.getKey() +" = " + entry.getValue());
+			logger.info(entry.getKey() +" = " + entry.getValue());
 		}
 		return props;
 	}
@@ -204,7 +234,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				String key = asfki_RowColumn.getBody();
 				String pattern = asfki_RowColumn.getAttributes().get("dateFormat");
 				String correctionTime = asfki_RowColumn.getAttributes().get("changedDate");
-				SimpleTimestampFormat stf = new SimpleTimestampFormat();
+				SimpleTimestampFormat stf = new SimpleTimestampFormat(pattern);
 				Timestamp value = stf.parse(correctionTime);
 				newMap.put(key, value);
 				listToCompare.add(key);
@@ -239,7 +269,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				Timestamp oldTimeToCompare = (oldMap.get(key) == null) ? defaultTs : oldMap.get(key);
 				Timestamp newTimeToCompare = newMap.get(key);
 				if (newTimeToCompare.after(oldTimeToCompare)) {
-					System.out.println(spisokUrlFolder + key + archiveExtention);
+					logger.debug(spisokUrlFolder + key + archiveExtention);
 					URL url = new URL(spisokUrlFolder + key + archiveExtention);
 					listToUpdate.add(url);
 				}
@@ -292,24 +322,29 @@ public class UpdateAsfkiFilesJob implements Runnable {
 		}
 		return file;
 	}
+	
 	private List<URL> parseUrls(String urls) throws MalformedURLException {
 		List<URL> list = new ArrayList<URL>();
 		String[] strs = urls.split(",");
 		for (String string : strs) {
-			URL url = new URL(string);
+			URL url = new URL(string.trim());
 			list.add(url);
 		}
 		return list;
 	}
 	private void updateList(List<Db2Table> errorTablesList) throws JAXBException {
 		// Преобразуем апдейт лист в свою схему (просто копируем новые даные)
+		
 		Root root = new Root();
 		SpisokRow row = new SpisokRow();
 		List<SpisokColumn> spisokColumnList = new ArrayList<SpisokColumn>();
 		List<String> errorTables = new ArrayList<String>();
-		for (Db2Table table : errorTablesList) {
-			errorTables.add(table.getName());
-		}
+		
+			for (Db2Table table : errorTablesList) {
+				errorTables.add(table.getName());
+			}
+		
+		
 		
 		for (ASFKI_RowColumn asfkColumn : downloadedList) {
 			if (errorTables.contains(asfkColumn.getBody())) {
@@ -402,7 +437,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
  * параметры виртуальной машины с таким же именем. Если есть - то присваивает
  * значение параметра виртуалки.
  */
-	private void initVmParams() {
+	private void initVm() {
 		Field[] thisFields = this.getClass().getDeclaredFields();
 		for (Field field : thisFields) {
 			if (field.getType() == String.class) {
@@ -426,35 +461,21 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		this.rowTag = rowTag;
 	}
 	private RemoteFileConfig getConfig() {
-		
-		String tableTag = "table";
-		String tableNameAttribute = "originalName";
-		String schemaNameAttribute = "originalSchema";
-		String columnRootTag = "thead";
-		String columnTag = "th";
-		String typeAttribute = "type";
-		String sizeAttribute = "length";
-		String commentAttribute = "comment";
-		String nullableAttribute ="isNullable";
-		String formatAttribute = "format";
-		String decimalDigitsAttribute = "";
-		String decimalScaleAttribute = "scale";
-		String decimalPrecisionAttribute = "precision";
-		
+	
 		RemoteFileConfig config = RemoteFileConfig.
-			getInstance(tableTag, 
-					TableAttributes.getInstance(tableNameAttribute, schemaNameAttribute),
-					columnRootTag,
-					columnTag,
+			getInstance(metaTableTag, 
+					TableAttributes.getInstance(metaTableNameAttribute, metaSchemaNameAttribute),
+					metaColumnRootTag,
+					metaColumnTag,
 					ColumnAttributes.getInstance(
-							typeAttribute,
-							sizeAttribute,
-							commentAttribute,
-							nullableAttribute,
-							formatAttribute,
-							decimalDigitsAttribute,
-							decimalScaleAttribute,
-							decimalPrecisionAttribute));
+							metaTypeAttribute,
+							metaSizeAttribute,
+							metaCommentAttribute,
+							metaNullableAttribute,
+							metaFormatAttribute,
+							metaDdecimalDigitsAttribute,
+							metaDecimalScaleAttribute,
+							metaDecimalPrecisionAttribute));
 		return config;
 	}
 
@@ -491,7 +512,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
     		xr.parse(is);
     		// Закрываем канал
     		zis.close();
-    		logger.info("---------------------------------------------------------------");
+    		logger.debug("-------------------------------------------------------------");
 	}
 	
 	private Db2FileLoadProps createDb2FilePropsUrl(URL url) throws Exception {
@@ -517,6 +538,26 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	
 	@Override
 	public void run() {
+		ProcessBuilder pb = new ProcessBuilder("db2.exe","connect to first user ircm_yanusheusky using B.ym130");
+		try {
+			Process process = pb.start();
+			process.waitFor();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		// Initializing
+		initConfig(); 
+		if (args != null && args.length > 0) {
+			initArgs();
+			}
+		initVm();
+		
+		// Starting job
+		
 		logger.info("Starting job");
 		Date startTime = new Date();
 		clean(tempFolder);
@@ -613,13 +654,9 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 
 
 	public static void main(String[] args) throws MalformedURLException {
-		if (args.length == 0) {
-		new UpdateAsfkiFilesJob().run();
-		}
-		else {
+
 			new UpdateAsfkiFilesJob(args).run();
 
-		}
 	}
 
 }

@@ -1,21 +1,25 @@
+/*
+ *  Copyright belongs to Belarusian Railways. 
+ *  Copying for commercial purposes is only allowed if the copyright owner's consent is obtained,
+ *  or a copyright fee is paid, or it is made under licence.
+ *  In order to obtain license call +375-17-2253017
+ */
 package rw.asfki;
 
 import ibm.Pipes;
-
-import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
-
 import org.apache.log4j.Logger;
 
-import rw.asfki.dao.DB2LoadDAO;
-import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
-import rw.asfki.domain.Db2FileLoadProps;
-import rw.asfki.error.ErrorManager;
-
+/**
+ * 
+ * Sun writer like class that writes data into the named pipe
+ * 
+ * @author Yanusheusky S.
+ * @since 26.05.2013
+ */
 public class Db2WriterPipeImpl implements Db2Writer {
-	private static Logger logger = Logger.getLogger("Service");
+	private static Logger logger = Logger.getLogger(Db2WriterPipeImpl.class);
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
 	private String lineSeparator; 
@@ -49,6 +53,7 @@ public class Db2WriterPipeImpl implements Db2Writer {
 		Pipes.FlushFileBuffers(namedPipeHandle);
 	    Pipes.CloseHandle(namedPipeHandle);
 	    Pipes.DisconnectNamedPipe(namedPipeHandle);
+	    logger.debug(String.format("Pipe %s closed",namedPipeHandle));
 
 	}
 

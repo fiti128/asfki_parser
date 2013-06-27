@@ -4,7 +4,10 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.log4j.Logger;
+
 public class AsfkiFilter extends FilterInputStream {
+	Logger logger = Logger.getLogger(AsfkiFilter.class);
 	private int flag=0;
 	private char delimeter;
 	public AsfkiFilter(InputStream arg0, char delimeter) {
@@ -20,27 +23,28 @@ public class AsfkiFilter extends FilterInputStream {
 			char currentChar=(char)arg0[i];
 
 			if(currentChar == delimeter) {
-				System.err.println(delimeter + " detected");
-				arg0[i]='#';
+				logger.debug(delimeter + " detected");
+				
+				arg0[i]=(byte) ((delimeter == '#') ? '|': delimeter);
 			}
 
 			if(currentChar >= 0 && currentChar < ' '){
-				System.err.println("fixup1:"+currentChar); 
+				logger.debug("fixup1:"+currentChar); 
 				arg0[i]=' ';
 			}
 			if((flag <= 0 && currentChar == '>') ||	(flag >= 1 && currentChar == '<')){
-				System.err.print("fixup1<>:" + arg0[i] + "@" +i);
+				logger.debug("fixup1<>:" + arg0[i] + "@" +i);
 				arg0[i]='_';
-				System.err.println(" fixed1<>:" + arg0[i]);
-				System.err.write(arg0,(i > 10) ? i-10 :i,(i < total-20) ? 30: total-i);
+				logger.debug(" fixed1<>:" + arg0[i]);
+//				System.err.write(arg0,(i > 10) ? i-10 :i,(i < total-20) ? 30: total-i);
 			}
 			if(currentChar == '<'){ 
 				if(i < total-1){
 					char nextChar=(char)arg0[i+1];
 					if (nextChar<'A' && nextChar!='/' && nextChar!='?') {
-						System.err.print("fixup1.1<>:"+currentChar+"@"+i);
+						logger.debug("fixup1.1<>:"+currentChar+"@"+i);
 						arg0[i]='_';
-						System.err.println(" fixed1.1<>:"+arg0[i]);
+						logger.debug(" fixed1.1<>:"+arg0[i]);
 					} else 	flag++;
 				} else 	flag++;
 			}

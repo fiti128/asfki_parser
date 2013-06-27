@@ -2,13 +2,11 @@ package rw.asfki.sax;
 
 import ibm.Pipes;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
@@ -20,11 +18,10 @@ import rw.asfki.Db2WriterPipeImpl;
 import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 import rw.asfki.domain.Db2FileLoadProps;
-import rw.asfki.domain.Db2Table;
 import rw.asfki.error.ErrorManager;
 
 public class AsfkiHandler extends DefaultHandler {
-	protected Logger logger = Logger.getLogger("Service");
+	protected Logger logger = Logger.getLogger(AsfkiHandler.class);
 	private static final int ERROR_PIPE_CONNECTED = 535;
 	private static final int PIPE_BUFFER = 131072;
 	private ErrorManager errorManager;
@@ -62,12 +59,12 @@ public class AsfkiHandler extends DefaultHandler {
 		namedPipeHandle = Pipes.CreateNamedPipe(pipeName, 0x00000003, 0x00000000, 2, PIPE_BUFFER, PIPE_BUFFER, 0xffffffff, 0);
 		if (namedPipeHandle == -1)
 		{
-			logger.info("CreateNamedPipe failed for " + pipeName + 
+			logger.debug("CreateNamedPipe failed for " + pipeName + 
 					" for error " + " Message " + Pipes.FormatMessage(Pipes.GetLastError()));
 			ok = false;
 		} else
 		{
-			logger.info("Named Pipe " + pipeName + " created successfully Handle=" + namedPipeHandle);
+			logger.debug("Named Pipe " + pipeName + " created successfully Handle=" + namedPipeHandle);
 			ok = true;
 		}
 		return ok;
@@ -75,7 +72,7 @@ public class AsfkiHandler extends DefaultHandler {
 	
 	private boolean connectToPipe()
 	{
-		logger.info("Waiting for a client to connect to pipe " + pipeName);
+		logger.debug("Waiting for a client to connect to pipe " + pipeName);
 		boolean connected = Pipes.ConnectNamedPipe(namedPipeHandle, 0);
 		if (!connected)
 		{
@@ -85,10 +82,10 @@ public class AsfkiHandler extends DefaultHandler {
 		}
 		if (connected)
 		{
-			logger.info("Connected to the pipe " + pipeName);
+			logger.debug("Connected to the pipe " + pipeName);
 		} else
 		{
-			logger.info("Falied to connect to the pipe " + pipeName);
+			logger.debug("Falied to connect to the pipe " + pipeName);
 		}
 		return connected;
 	}

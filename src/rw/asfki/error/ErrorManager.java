@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -30,7 +31,7 @@ import rw.asfki.util.UsefulMethods;
 
 public class ErrorManager {
 	private static String ZIP_NAME = "errors.zip";
-	protected Logger logger = Logger.getLogger("Service");
+	protected Logger logger = Logger.getLogger(ErrorManager.class);
 	private File errorDir;
 	private List<Db2Table> localTablesList;
 	private List<Db2Table> errorTablesList;
@@ -51,11 +52,11 @@ public class ErrorManager {
 		UsefulMethods.copyFile(errorFile, storedErrorFile, true);
 		String fullName = errorFile.getName();
 		String name = fullName.substring(0, fullName.length()-4);
-		logger.warn(name);
+		logger.debug(name);
 		for (int i = 0; i < localTablesList.size(); i++) {
 			if (localTablesList.get(i).getName().equals(name)) {
 				Db2Table table = localTablesList.remove(i);
-				logger.warn(table);
+				logger.debug(table + " added to errorList");
 				errorTablesList.add(table);
 				break;
 			}
@@ -67,6 +68,9 @@ public class ErrorManager {
 	public void sendToMail(String email) throws IOException, AddressException, MessagingException {
 		// Archive error folder
 		File zipFile = new File(ZIP_NAME);
+		if (zipFile.isFile()) {
+			zipFile.delete();
+		}
 		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(zipFile, false));
 		File[] files = errorDir.listFiles();
 		ZipOutputStream zos = new ZipOutputStream(bos);
@@ -92,11 +96,11 @@ public class ErrorManager {
 		props.setProperty("emailTo", email);
 		// Sending email
 		String host = "10.200.2.5";
-		String emailFrom = "ircm_natalia@mnsk.rw";
+		String emailFrom = "fki.system@mnsk.rw";
 		
 		Properties sysProps = System.getProperties();
 		sysProps.put("mail.smtp.host", host);
-		System.out.println(sysProps.getProperty("mail.smtp.port"));
+		logger.debug("Mail.smtp.port" + sysProps.getProperty("mail.smtp.port"));
 		Session session = Session.getInstance(sysProps,null);
 		Message msg = new MimeMessage(session);
 		msg.setFrom(new InternetAddress(emailFrom));
@@ -116,13 +120,16 @@ public class ErrorManager {
 		}
 		
 		StringBuilder sb = new StringBuilder();
+		String text = "";
 		if (files.length > 0) {
 			msg.setSubject("Отчет по работе АСФКИ парсера. Есть ошибки.");
 			MimeBodyPart mbp1 = new MimeBodyPart();
 			sb.append("Количество проблем: ").append(files.length)
-				.append(" таблиц.\nПодробности в присоединенном файле\n\nНаталья\n")
-				.append(additionalInfo); 
-			mbp1.setText(sb.toString());
+				.append(" таблиц.\nПодробности в присоединенном файле\n\nСистема\n")
+				.append(additionalInfo);
+			text = sb.toString();
+			logger.debug(String.format("Email text: %n%s", text));
+			mbp1.setText(text);
 			MimeBodyPart mbp2 = new MimeBodyPart();
 			mbp2.attachFile(zipFile);
 			MimeMultipart mp = new MimeMultipart();
@@ -133,9 +140,11 @@ public class ErrorManager {
 		}
 		else {
 			msg.setSubject("Отчет по работе АСФКИ парсера. Ошибок не было.");
-			sb.append("Работа парсера прошла успешно. Ошибок выявлено не было\n\nНаталья")
+			sb.append("Работа парсера прошла успешно. Ошибок выявлено не было\n\nСистема")
 				.append(additionalInfo);
-			msg.setText(sb.toString());
+			text = sb.toString();
+			logger.debug(String.format("Email text: %n%s", text));
+			msg.setText(text);
 		}
 		
 		Transport.send(msg);
@@ -143,7 +152,11 @@ public class ErrorManager {
 		
 	}
 	public List<Db2Table> getErrorTablesList() {
-		return errorTablesList;
+		List<Db2Table> list = errorTablesList;
+		if (list == null) {
+			list = Collections.emptyList();
+		}
+		return list;
 	}
 
 

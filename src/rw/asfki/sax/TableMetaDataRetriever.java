@@ -17,7 +17,7 @@ import rw.asfki.domain.Db2Table;
 import rw.asfki.domain.RemoteFileConfig;
 
 public class TableMetaDataRetriever extends DefaultHandler {
-	protected static Logger logger = Logger.getLogger("Service");
+	protected static Logger logger = Logger.getLogger(TableMetaDataRetriever.class);
 	private RemoteFileConfig config;
 	private String string;
 	private Db2Table db2Table;
@@ -105,6 +105,8 @@ public class TableMetaDataRetriever extends DefaultHandler {
 		
 		if (qName.equalsIgnoreCase(config.getColumnsRootTag())) {
 			db2Table.setColumns(columnlist);
+			// TODO. Just ignoring schema from XML document.
+			db2Table.setSchema(localTablesList.get(0).getSchema());
 			if (!localTablesList.contains(db2Table)) {
 				try {
 					infoDao.createTable(db2Table);
@@ -112,7 +114,7 @@ public class TableMetaDataRetriever extends DefaultHandler {
 					logger.error(e.getMessage());
 				}
 			}
-			logger.info("Setting loading handler");
+			logger.debug("Setting loading handler");
 			xr.setContentHandler(handler);
 		}
 	

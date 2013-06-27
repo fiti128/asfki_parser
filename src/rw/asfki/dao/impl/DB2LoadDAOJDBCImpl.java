@@ -41,7 +41,7 @@ import rw.asfki.domain.Db2Table;
  *
  */
 public class DB2LoadDAOJDBCImpl implements DB2LoadDAO {
-	protected static Logger logger = Logger.getLogger("service");
+	protected static Logger logger = Logger.getLogger(DB2LoadDAOJDBCImpl.class);
 	private DataSource dataSource;
 	private static String PREPARE_SQL = "CALL SYSPROC.DB2LOAD (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	

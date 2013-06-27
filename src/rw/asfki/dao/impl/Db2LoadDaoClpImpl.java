@@ -1,15 +1,12 @@
 package rw.asfki.dao.impl;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Properties;
 import java.util.Queue;
-
 import org.apache.log4j.Logger;
 
 import rw.asfki.UpdateAsfkiFilesJob;
@@ -20,7 +17,7 @@ import rw.asfki.domain.Db2Table;
 import rw.asfki.error.ErrorManager;
 
 public class Db2LoadDaoClpImpl implements DB2LoadDAO {
-	protected static Logger logger = Logger.getLogger("service");
+	protected static Logger logger = Logger.getLogger(Db2LoadDaoClpImpl.class);
 	private ErrorManager errorManager;
 	static int counter = 0;
 	private File tempDir;
@@ -116,25 +113,57 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 			.append(" REPLACE INTO ").append(schema).append(".").append(table).append(" DATA BUFFER 10000");
 		String loadCommand = sb.toString();
 		
+	
 		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
 		
-		logger.info(table + " start loading");
+		try {
+			File outputFile = new File(absPathToLogFolder,"output.txt");
+			if (!outputFile.isFile()) {
+					outputFile.createNewFile();
+			}
+
+			File errorFile = new File(absPathToLogFolder,"error.txt");
+			if (!errorFile.isFile()) {
+				errorFile.createNewFile();
+			}
+			File inputFile = new File(absPathToLogFolder,"input.txt");
+			if (!inputFile.isFile()) {
+				inputFile.createNewFile();
+			}
+			pb.redirectError(errorFile);
+			pb.redirectInput(inputFile);
+			pb.redirectOutput(outputFile);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		sb.setLength(0);
+		sb.append(table).append(" start loading");
+		logger.info(sb.toString());
 		try {
 			Process process = pb.start();
 			int errorlevel = process.waitFor();
 			if (errorlevel > 0) {
-				logger.error(table + " proccessed with errors");
+			
+				sb.setLength(0);
+				sb.append(schema).append(".").append(table).append(" proccessed with errors.");
+				logger.error(sb.toString());
 				errorManager.addErrorFile(logFile);
 
 			} else {
-				logger.info(table + " loaded");
+				sb.setLength(0);
+				sb.append(schema).append(".").append(table).append(" loaded.");
+				logger.info(sb.toString());
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		int size = UpdateAsfkiFilesJob.LIST_SIZE;
 		counter++;
-		logger.info("Files remaining: " + (size - counter) + " from " + size);
+		sb.setLength(0);
+		sb.append("Files remaining: ").append(size - counter).append(" from ").append(size);
+		logger.info(sb.toString());
 	}
 
 	@Override

@@ -16,7 +16,7 @@ import rw.asfki.domain.Db2Column;
 import rw.asfki.domain.Db2Table;
 
 public class Db2InfoDaoJdbcImpl implements InfoDao {
-	protected Logger logger = Logger.getLogger("Service");
+	protected Logger logger = Logger.getLogger(Db2InfoDaoJdbcImpl.class);
 	private Connection connection;
 	
 	private Db2InfoDaoJdbcImpl(Connection connection) {
@@ -34,8 +34,11 @@ public class Db2InfoDaoJdbcImpl implements InfoDao {
 	public void updateTablesMetaData(List<Db2Table> db2TablesList) throws SQLException {
 		logger.info("Getting local Meta Data");
 		DatabaseMetaData md = connection.getMetaData();
-		ResultSet columnsResultSet = md.getColumns(
-				null, db2TablesList.get(0).getSchema(), null , null);
+		String schema = db2TablesList.get(0).getSchema();
+		ResultSet columnsResultSet;
+		
+			columnsResultSet = md.getColumns(
+					null, schema, null , null);
 		while(columnsResultSet.next()) {
 			String tableName = columnsResultSet.getString("TABLE_NAME");
 			
@@ -53,6 +56,7 @@ public class Db2InfoDaoJdbcImpl implements InfoDao {
 				}
 			}
 		}
+		
 		logger.info("Local Meta Data info updated");
 	}
 
