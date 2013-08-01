@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Queue;
@@ -108,38 +106,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		String table = props.getTable();
 		
 		File logFile = new File(absPathToLogFolder, table + ".txt");
-		File logLinkFile = new File(absPathToLogFolder,table);
-		
-		Path logLinkPath = logLinkFile.toPath();
-		if (Files.isSymbolicLink(logLinkPath)) {
-			try {
-				logger.debug(String.format("Symbolic link already exist. The target of the link '%s' is '%s'",
-						logLinkPath, Files.readSymbolicLink(logLinkPath)));
-			} catch (IOException e) {
-				logger.error("Symbolic link is not symbolic link");
-				System.exit(1);
-			}
-			try {
-				Files.delete(logLinkPath);
-				logger.debug(String.format("link %s succesefuly deleted", logLinkPath.toString()));
-			} catch (IOException e) {
-				logger.error("Could not delete symbolic link" + logLinkPath);
-				System.exit(1);
-			}
-		}
-		Path logTargetPath = logFile.toPath();
-		logTargetPath = logTargetPath.toAbsolutePath();
-		logger.debug("logTargetPath = " + logTargetPath);
-		Path link = null;
-		try {
-			link = Files.createSymbolicLink(logLinkPath, logTargetPath);
-			logger.debug("New link created " +link);
-			logger.debug("Target of new link is " + Files.readSymbolicLink(link));
-		} catch (IOException e2) {
-			logger.error(String.format("Could not create sybolic link %s from file %s%nCall programmer", logLinkPath.toString(),logTargetPath));
-			System.exit(1);
-		}
-		String absolutePathToLogFile = link.toString();
+		String absolutePathToLogFile = logFile.getAbsolutePath();
 
 		logger.debug(String.format("Abs path to log file of db2 load command is %s",absolutePathToLogFile));
 		StringBuilder sb = new StringBuilder();

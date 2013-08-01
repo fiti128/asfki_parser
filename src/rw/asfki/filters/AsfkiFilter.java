@@ -7,8 +7,6 @@ import java.io.InputStream;
 import org.apache.log4j.Logger;
 
 public class AsfkiFilter extends FilterInputStream {
-	private final static char BRACERS_OPEN = '«';
-	private final static char BRACERS_END ='»';
 	Logger logger = Logger.getLogger(AsfkiFilter.class);
 	private int flag=0;
 	private char delimeter;
@@ -22,6 +20,16 @@ public class AsfkiFilter extends FilterInputStream {
 		int retLen=super.read(arg0, start, length);
 		int total=start+retLen;
 		for(int i=start;i<total;++i){
+//			if (arg0[i] == -62) {
+//				if (arg0[i+1] == -69 || arg0[i+1] == -85) {
+//					logger.debug("« or » detected. Replaced on \"");
+//					arg0[i] = 34;
+//					i++;
+//					continue;
+//				}
+//			}
+			
+			
 			char currentChar=(char)arg0[i];
 
 			if(currentChar == delimeter) {
@@ -30,14 +38,6 @@ public class AsfkiFilter extends FilterInputStream {
 				arg0[i]=(byte) ((delimeter == '#') ? '|': delimeter);
 			}
 			
-			if (currentChar == BRACERS_OPEN) {
-				logger.debug(BRACERS_OPEN + " detected");
-				arg0[i] = (byte) '"';
-			}
-			if (currentChar == BRACERS_END) {
-				logger.debug(BRACERS_END + " detected");
-				arg0[i] = (byte) '"';
-			}
 			
 			if(currentChar >= 0 && currentChar < ' '){
 				logger.debug("fixup1:" + currentChar); 

@@ -62,6 +62,7 @@ import rw.asfki.domain.Db2Table;
 import rw.asfki.domain.RemoteFileConfig;
 import rw.asfki.domain.TableAttributes;
 import rw.asfki.error.ErrorManager;
+import rw.asfki.filters.AsfkiCharFilter;
 import rw.asfki.filters.AsfkiFilter;
 import rw.asfki.sax.AsfkiHandler;
 import rw.asfki.sax.TableMetaDataRetriever;
@@ -580,7 +581,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
        		// Открываем канал из урла, буфферезуем и прогоняем через LZMA декодер
     		XZInputStream zis = new XZInputStream(new BufferedInputStream(url.openStream()));
     		// Пропускаем через свой фильтр, декодируем в буквы по утф8 и преобразуем в понятный саксу сорс
-    		InputSource is = new InputSource(new InputStreamReader(new AsfkiFilter(zis,delimeter.trim().charAt(0)) ,"UTF-8"));
+    		InputSource is = new InputSource(new AsfkiCharFilter(new InputStreamReader(new AsfkiFilter(zis,delimeter.trim().charAt(0)) ,"UTF-8")));
             // Собственно запускаем сакс с нашим обработчиком      
     		xr.parse(is);
     		// Закрываем канал
