@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Queue;
@@ -106,12 +108,47 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		String table = props.getTable();
 		
 		File logFile = new File(absPathToLogFolder, table + ".txt");
+		File logLinkFile = new File(absPathToLogFolder,table);
+		
+		Path logLinkPath = logLinkFile.toPath();
+		if (Files.isSymbolicLink(logLinkPath)) {
+			try {
+				logger.debug(String.format("Symbolic link already exist. The target of the link '%s' is '%s'",
+						logLinkPath, Files.readSymbolicLink(logLinkPath)));
+			} catch (IOException e) {
+				logger.error("Symbolic link is not symbolic link");
+				System.exit(1);
+			}
+			try {
+				Files.delete(logLinkPath);
+				logger.debug(String.format("link %s succesefuly deleted", logLinkPath.toString()));
+			} catch (IOException e) {
+				logger.error("Could not delete symbolic link" + logLinkPath);
+				System.exit(1);
+			}
+		}
+		Path logTargetPath = logFile.toPath();
+		logTargetPath = logTargetPath.toAbsolutePath();
+		logger.debug("logTargetPath = " + logTargetPath);
+		Path link = null;
+		try {
+			link = Files.createSymbolicLink(logLinkPath, logTargetPath);
+			logger.debug("New link created " +link);
+			logger.debug("Target of new link is " + Files.readSymbolicLink(link));
+		} catch (IOException e2) {
+			logger.error(String.format("Could not create sybolic link %s from file %s%nCall programmer", logLinkPath.toString(),logTargetPath));
+			System.exit(1);
+		}
+		String absolutePathToLogFile = link.toString();
+
+		logger.debug(String.format("Abs path to log file of db2 load command is %s",absolutePathToLogFile));
 		StringBuilder sb = new StringBuilder();
 		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
 			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
-			.append(" MESSAGES ").append("\"").append(logFile.getAbsolutePath()).append("\"")
+			.append(" MESSAGES ").append("\"").append(absolutePathToLogFile).append("\"")
 			.append(" REPLACE INTO ").append(schema).append(".").append(table).append(" DATA BUFFER 10000");
 		String loadCommand = sb.toString();
+		logger.debug(String.format("Db2 load commans is %s", loadCommand));
 		
 	
 		ProcessBuilder pb = new ProcessBuilder("db2.exe", loadCommand);
@@ -177,8 +214,6 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	public void loadFromQueue(Queue<Db2FileLoadProps> db2props)
 			throws SQLException  {
 				// TODO
-			
-			
 		}
 
 	

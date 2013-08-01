@@ -29,7 +29,7 @@ import rw.asfki.util.UsefulMethods;
  * 
  */
 public class DataSourceFromProperties implements DataSource {
-	protected static Logger logger = Logger.getLogger("service");
+	protected static Logger logger = Logger.getLogger(DataSourceFromProperties.class);
 	private String username;
 	private String password;
 	private String driver;
@@ -91,13 +91,19 @@ public class DataSourceFromProperties implements DataSource {
 
 	@Override
 	public Connection getConnection() throws SQLException {
-		return DriverManager.getConnection(db2Url, username, password);
+		logger.debug(String.format("Achieving JDBC Connection with db2Url: %s, username: %s, password: %s",db2Url.toString(), username, password));
+		Connection connection = DriverManager.getConnection(db2Url, username, password);
+		logger.debug("Connection established successfully");
+		return connection;
 	}
 
 	@Override
 	public Connection getConnection(String theUsername, String thePassword)
 			throws SQLException {
-		return DriverManager.getConnection(db2Url, theUsername, thePassword);
+		logger.debug(String.format("Achieving JDBC Connection with db2Url: %s, username: %s, password: %s",db2Url.toString(), theUsername, thePassword));
+		Connection connection = DriverManager.getConnection(db2Url, theUsername, thePassword);
+		logger.debug("Connection established successfully");
+		return connection;
 	}
 	@Override
 	public java.util.logging.Logger getParentLogger()

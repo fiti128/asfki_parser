@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Db2Table {
 	
+	private String tableParams;
 	private String name;
 	private String schema;
 	private List<Db2Column> columns;
@@ -25,7 +26,13 @@ public class Db2Table {
 	public void setColumns(List<Db2Column> columns) {
 		this.columns = columns;
 	}
-	
+		
+	public String getTableParams() {
+		return tableParams;
+	}
+	public void setTableParams(String tableParams) {
+		this.tableParams = tableParams;
+	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;

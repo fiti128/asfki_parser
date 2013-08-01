@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -36,13 +37,30 @@ public class ErrorManager {
 	private List<Db2Table> localTablesList;
 	private List<Db2Table> errorTablesList;
 	
-	public ErrorManager(File errorDir, List<Db2Table> localTablesList) {
+	private ErrorManager(File errorDir, List<Db2Table> localTablesList) {
 		this.localTablesList = localTablesList;
 		this.errorDir = errorDir;
-		if (!errorDir.isDirectory()) {
-			errorDir.mkdir();
+		
+	}
+	public static ErrorManager getInstance(File errorDir, List<Db2Table> localTablesList) {
+		createOrCleanFolder(errorDir);
+		return new ErrorManager(errorDir, localTablesList);
+	}
+	
+	private static void createOrCleanFolder(File folder) {
+		if (!folder.isDirectory()) {
+			folder.mkdir();
 		}
-
+		List<String> filesInTemp = Arrays.asList(folder
+				.list());
+		for (String string : filesInTemp) {
+			String pathToDelete = (folder.toString() + "/" + string)
+					.trim();
+			File phantom = new File(pathToDelete);
+			phantom.setWritable(true);
+			phantom.delete();
+		}
+		
 	}
 	public void addErrorFile(File errorFile) throws IOException {
 		if (errorTablesList == null) {
@@ -100,11 +118,13 @@ public class ErrorManager {
 		
 		Properties sysProps = System.getProperties();
 		sysProps.put("mail.smtp.host", host);
-		logger.debug("Mail.smtp.port" + sysProps.getProperty("mail.smtp.port"));
+		logger.debug("Mail.smtp.port " + sysProps.getProperty("mail.smtp.port"));
 		Session session = Session.getInstance(sysProps,null);
 		Message msg = new MimeMessage(session);
 		msg.setFrom(new InternetAddress(emailFrom));
+		
 		msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email,false));
+		
 		msg.setSentDate(new Date());
 		StringBuilder additionalInfo = new StringBuilder();
 		additionalInfo.append("\n--------------------------------\n")

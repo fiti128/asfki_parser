@@ -81,8 +81,10 @@ public class YanushDataSource implements DataSource {
 			logger.error("Driver was not found");
 			throw new RuntimeException(e);
 		}
-		
-		return DriverManager.getConnection(db2Url, theUsername, thePassword);
+		logger.debug(String.format("Achieving JDBC Connection with db2Url: %s, username: %s, password: %s",db2Url.toString(), theUsername, thePassword));
+		Connection connection = DriverManager.getConnection(db2Url, theUsername, thePassword);
+		logger.debug("Connection established successfully");
+		return connection;
 	}
 	@Override
 	public java.util.logging.Logger getParentLogger()

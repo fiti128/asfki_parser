@@ -122,8 +122,8 @@ public class Db2Column {
 	public String toString() {
 		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
 		String nullableString = (nullable == 1) ? "": " not null";
-		// TODO Db2 Load ignores 'with default'. It works only with inserts
-		nullableString = "";
+
+//		nullableString = "";
 		String printDetails = "";
 		
 		switch(dataType) {
@@ -148,7 +148,9 @@ public class Db2Column {
 									append(columnSize).
 									append(")").toString();
 								if (nullableString.length() > 1) {
-									nullableString = nullableString + " WITH DEFAULT ''";
+									// TODO Db2 Load ignores 'with default'. It works only with inserts
+//									nullableString = nullableString + " WITH DEFAULT ''";
+									nullableString = "";
 								}
 								break;
 			case Types.VARCHAR: 
@@ -157,7 +159,9 @@ public class Db2Column {
 								append(columnSize).
 								append(")").toString();
 								if (nullableString.length() > 1) {
-									nullableString = nullableString + " WITH DEFAULT ''";
+									// TODO Db2 Load ignores 'with default'. It works only with inserts
+//									nullableString = nullableString + " WITH DEFAULT ''";
+									nullableString = "";
 								}
 								break;
 			case Types.DECIMAL: 

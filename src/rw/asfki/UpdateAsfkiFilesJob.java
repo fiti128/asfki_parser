@@ -9,11 +9,14 @@ package rw.asfki;
 import java.io.BufferedInputStream;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Timestamp;
@@ -102,30 +105,34 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String schema;
 	private String user;
 	private String password;
-//	private String database;
 	private String dbUrl;
 	private String driver;
+	private String tableParams;
 	
 	// Table Meta Data with default values
-	private String metaTableTag = "table";
-	private String metaTableNameAttribute = "originalName";
-	private String metaSchemaNameAttribute = "originalSchema";
-	private String metaColumnRootTag = "thead";
-	private String metaColumnTag = "th";
-	private String metaTypeAttribute = "type";
-	private String metaSizeAttribute = "length";
-	private String metaCommentAttribute = "comment";
-	private String metaNullableAttribute ="isNullable";
-	private String metaFormatAttribute = "format";
-	private String metaDdecimalDigitsAttribute = "";
-	private String metaDecimalScaleAttribute = "scale";
-	private String metaDecimalPrecisionAttribute = "precision";
+	private String tableTag = "table";
+	private String tableNameAttribute = "originalName";
+	private String schemaNameAttribute = "originalSchema";
+	private String headerRootTag = "thead";
+	private String headerColumnTag = "th";
+	private String headerColumnAttribute = "type";
+	private String headerColumnSizeAttribute = "length";
+	private String headerColumnCommentAttribute = "comment";
+	private String headerColumnNullableAttribute ="isNullable";
+	private String headerColumnFormatAttribute = "format";
+	private String headerColumnDecimalDigitsAttribute = "";
+	private String headerColumnDecimalScaleAttribute = "scale";
+	private String headerColumnDecimalPrecisionAttribute = "precision";
 	
 	private List<ASFKI_RowColumn> downloadedList;
 	private List<String> spisokRowAttributes = new ArrayList<String>();
 	private List<String> spisokColumnAttributes = new ArrayList<String>();
 	private boolean forceTableCreation;
 	private String args[];
+	private String proxyHost;
+	private String proxyPort;
+	protected String proxyUser;
+	protected String proxyPassword;
 
 	
 	public UpdateAsfkiFilesJob(String args[]) {
@@ -213,7 +220,17 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			// Download spisok
 		  URL fileUrl = new URL(spisokUrlFolder + spisokFileName);
 		  File downloadedSpisok = new File(tempFolder + "/" + spisokFileName);
-		  downloadFile(fileUrl, downloadedSpisok);
+		  try {
+			  	downloadFile(fileUrl, downloadedSpisok);
+		  		} catch (FileNotFoundException e) {
+					logger.error("File with table list was not found." +
+							" Check spisokUrlFolder and spisokFileName properties at conf/parser.properties");
+					System.exit(1);
+				} catch (IOException e) {
+					logger.error("IOException was catched",e);
+					System.exit(1);
+				}
+		
 		  
 		    // Initializing reader for downloaded file
 			Reader reader = new AsfkiReader.Builder(downloadedSpisok, spisokRowTag, spisokColumnTag)
@@ -234,8 +251,11 @@ public class UpdateAsfkiFilesJob implements Runnable {
 				String key = asfki_RowColumn.getBody();
 				String pattern = asfki_RowColumn.getAttributes().get("dateFormat");
 				String correctionTime = asfki_RowColumn.getAttributes().get("changedDate");
-				SimpleTimestampFormat stf = new SimpleTimestampFormat(pattern);
-				Timestamp value = stf.parse(correctionTime);
+				SimpleTimestampFormat stf = (pattern == null)
+					? new SimpleTimestampFormat() : new SimpleTimestampFormat(pattern);
+				// Just in case
+				Timestamp value = (correctionTime == null || correctionTime.length() < 20)
+				? stf.parse(defaultTime) : stf.parse(correctionTime);
 				newMap.put(key, value);
 				listToCompare.add(key);
 			}
@@ -279,10 +299,10 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	}
 	
 	private void downloadFile(URL fileUrl, File downloadedSpisok) throws IOException {
+		
 		BufferedInputStream in = null;
     	FileOutputStream fout = null;
-    	try
-    	{
+
     		in = new BufferedInputStream(fileUrl.openStream());
     		fout = new FileOutputStream(downloadedSpisok);
 
@@ -292,14 +312,8 @@ public class UpdateAsfkiFilesJob implements Runnable {
     		{
     			fout.write(data, 0, count);
     		}
-    	}
-    	finally
-    	{
-    		if (in != null)
-    			in.close();
-    		if (fout != null)
-    			fout.close();
-    	}
+
+
 		
 	}
 	private void createFolder(String downloadFolder) {
@@ -455,27 +469,86 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 		}
 
 	}
-
 	
+	private void createConnectionToDatabase() {
+//		ProcessBuilder processBuilder = new ProcessBuilder("db2cmd.exe", "/w", "/c","/i");
+//		try {
+//			processBuilder.start().waitFor();
+//		} catch (InterruptedException e2) {
+//			// TODO Auto-generated catch block
+//			e2.printStackTrace();
+//		} catch (IOException e2) {
+//			// TODO Auto-generated catch block
+//			e2.printStackTrace();
+//		}
+		
+		String[] partsOfDbUrl = dbUrl.split("/");
+		String database = partsOfDbUrl[partsOfDbUrl.length-1];
+		logger.debug(String.format("Parsing database name from url %s and we've got %s",dbUrl,database));
+		StringBuilder sb = new StringBuilder();
+		sb.append("connect to ").append(database).append(" user ").append(user)
+		.append(" using ").append(password);
+		String connectionCommand = sb.toString();
+		logger.debug(String.format("Connection command created as : %n%s",connectionCommand));
+		
+		ProcessBuilder pb = new ProcessBuilder("db2.exe", connectionCommand);
+		try {
+			Process process = pb.start();
+			int errorlevel = process.waitFor();
+			if (errorlevel > 0) {
+				logger.error(String.format("Connection to dababase %s with" +
+						" user %s and password %s failed. Check once again user,password and dbUrl at" +
+						" conf/parser.properties",database.toUpperCase(),user,password));
+				System.exit(1);
+				
+			} else {
+				logger.debug(String.format("Connection to dababase %s with" +
+						" user %s and password %s was created successfuly",database,user,password));
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	private void initSecurity() {
+		// Global security
+	    if (proxyUser !=null && !proxyUser.equals(""))	
+	    Authenticator.setDefault(new Authenticator() {
+		protected PasswordAuthentication getPasswordAuthentication() {
+	        return new
+	           PasswordAuthentication(proxyUser,proxyPassword.toCharArray());
+	    }});
+	    // PROXY
+	    if (proxyHost !=null && !proxyHost.equals("") &&
+	    		proxyPort !=null && !proxyPort.equals("")) {
+	    	System.setProperty("http.proxyHost", proxyHost) ;
+	    	System.setProperty("http.proxyPort", proxyPort) ;
+     }
+		
+	}
 	public void setRowTag(String rowTag) {
 		this.rowTag = rowTag;
 	}
 	private RemoteFileConfig getConfig() {
 	
 		RemoteFileConfig config = RemoteFileConfig.
-			getInstance(metaTableTag, 
-					TableAttributes.getInstance(metaTableNameAttribute, metaSchemaNameAttribute),
-					metaColumnRootTag,
-					metaColumnTag,
+			getInstance(tableTag, 
+					TableAttributes.getInstance(tableNameAttribute, schemaNameAttribute),
+					headerRootTag,
+					headerColumnTag,
 					ColumnAttributes.getInstance(
-							metaTypeAttribute,
-							metaSizeAttribute,
-							metaCommentAttribute,
-							metaNullableAttribute,
-							metaFormatAttribute,
-							metaDdecimalDigitsAttribute,
-							metaDecimalScaleAttribute,
-							metaDecimalPrecisionAttribute));
+							headerColumnAttribute,
+							headerColumnSizeAttribute,
+							headerColumnCommentAttribute,
+							headerColumnNullableAttribute,
+							headerColumnFormatAttribute,
+							headerColumnDecimalDigitsAttribute,
+							headerColumnDecimalScaleAttribute,
+							headerColumnDecimalPrecisionAttribute));
 		return config;
 	}
 
@@ -538,17 +611,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	
 	@Override
 	public void run() {
-		ProcessBuilder pb = new ProcessBuilder("db2.exe","connect to first user ircm_yanusheusky using B.ym130");
-		try {
-			Process process = pb.start();
-			process.waitFor();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		// Initializing
 		initConfig(); 
 		if (args != null && args.length > 0) {
@@ -556,10 +619,15 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			}
 		initVm();
 		
-		// Starting job
+		createConnectionToDatabase();
 		
+		initSecurity();
+		
+		// Starting job
 		logger.info("Starting job");
 		Date startTime = new Date();
+				
+		
 		clean(tempFolder);
 		createFolder(tempFolder);
 		createFolder(errorFolder);
@@ -585,6 +653,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				Db2Table db2Table = new Db2Table();
 				db2Table.setName(fileName);
 				db2Table.setSchema(schema);
+				db2Table.setTableParams(tableParams);
 				localTablesList.add(db2Table);
 				List<Db2Column> colList = new ArrayList<Db2Column>();
 				db2Table.setColumns(colList);
@@ -597,13 +666,14 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			// Update table
 			LIST_SIZE = list.size();
 			
+			ErrorManager errorManager = ErrorManager.getInstance(new File(errorFolder), localTablesList);
 			if (list.size() > 0) {
-				ErrorManager errorManager = new ErrorManager(new File(errorFolder), localTablesList);
 				
 				// Выгружаем метаданные из локальной базы данных
 				DataSource dataSource = YanushDataSource.getInstance(user, password, driver, dbUrl);
 				Connection connection = dataSource.getConnection();
 				InfoDao infoDao = DaoFactory.getInfoDao(connection);
+				
 				if (!forceTableCreation) {
 					infoDao.updateTablesMetaData(localTablesList);
 				}
@@ -622,7 +692,6 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				executorService.shutdown();
 				executorService.awaitTermination(1, TimeUnit.MINUTES);
 				
-				errorManager.sendToMail(mailTo);
 				if (regularJob) {
 					updateList(errorManager.getErrorTablesList());
 				}
@@ -630,8 +699,9 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 			else {
 				logger.info("Everything is up to date");
 			}
+			errorManager.sendToMail(mailTo);
 			} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("Unpredictable error", e);
 		
 		}
 		finally {
@@ -644,18 +714,25 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 	
 		Date endTime = new Date();
 		long jobTime = endTime.getTime() - startTime.getTime();
-		String jobPrettyTime = UsefulMethods.millisToLongDHMS(jobTime);
+		String jobPrettyTime = UsefulMethods.millisToLongDHMSeng(jobTime);
 		
-		logger.info("Конец работы");
-		logger.info("Затраченно времени: " + jobPrettyTime);
+		logger.info("Elapsed time: " + jobPrettyTime);
+		logger.info("End of job");
+		logger.info("--------------------------------------------------");
 	}
 	
 
 
 
+
+
 	public static void main(String[] args) throws MalformedURLException {
 
-			new UpdateAsfkiFilesJob(args).run();
+			try{
+				new UpdateAsfkiFilesJob(args).run();
+			} catch (Exception e) {
+				logger.error("Program stoped due to an error\n",e);
+			}
 
 	}
 

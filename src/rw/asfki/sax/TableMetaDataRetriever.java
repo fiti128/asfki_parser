@@ -107,13 +107,20 @@ public class TableMetaDataRetriever extends DefaultHandler {
 			db2Table.setColumns(columnlist);
 			// TODO. Just ignoring schema from XML document.
 			db2Table.setSchema(localTablesList.get(0).getSchema());
+			db2Table.setTableParams(localTablesList.get(0).getTableParams());
+			logger.debug(String.format("Program checks table %s",db2Table.toString()));
 			if (!localTablesList.contains(db2Table)) {
 				try {
+					logger.debug(String.format("There is no equal %s in database.To be created",db2Table.toString()));
 					infoDao.createTable(db2Table);
 				} catch (SQLException e) {
 					logger.error(e.getMessage());
 				}
 			}
+			else {
+				logger.debug(String.format("Same %s exist in database.",db2Table.toString()));
+			}
+			logger.debug(String.format("Table checking and creation complete"));
 			logger.debug("Setting loading handler");
 			xr.setContentHandler(handler);
 		}

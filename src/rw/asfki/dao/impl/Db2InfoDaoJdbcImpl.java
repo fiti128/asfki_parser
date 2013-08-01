@@ -73,7 +73,12 @@ public class Db2InfoDaoJdbcImpl implements InfoDao {
 		}
 		sb.delete(sb.length()-2, sb.length());
 		sb.append(")");
+		String tableParams = db2Table.getTableParams();
+		if (tableParams !=null && !tableParams.equals("")) {
+			sb.append(" ").append(tableParams);
+		}
 		String createTableCommand = sb.toString();
+		logger.debug(String.format("Create table command is : %s", createTableCommand));
 
 		// Создаем строку удаления
 		sb.setLength(0);
@@ -89,9 +94,8 @@ public class Db2InfoDaoJdbcImpl implements InfoDao {
 		try {
 			statement.execute(createTableCommand);
 		} catch (SQLException e) {
-			logger.error("loc message" + e.getLocalizedMessage());
 			logger.error("message" + e.getMessage());
-			throw e;
+			System.exit(1);
 		}
 		SQLWarning warnings = statement.getWarnings();
 		if (warnings !=	null) {

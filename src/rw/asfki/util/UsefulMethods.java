@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.util.Properties;
+
+import org.apache.log4j.Logger;
+
 /**
  * Класс, включающие в себя пару полезных методов.
  * Все методы в классе - статические.
@@ -22,6 +25,7 @@ import java.util.Properties;
  * @since 21.02.2012
  */
 public class UsefulMethods {
+	private static Logger logger = Logger.getLogger(UsefulMethods.class);
 	
 	public final static long ONE_SECOND = 1000;
     public final static long SECONDS = 60;
@@ -39,7 +43,7 @@ public class UsefulMethods {
      * converts time (in milliseconds) to human-readable format
      *  "<w> days, <x> hours, <y> minutes and (z) seconds"
      */
-    public static String millisToLongDHMS(long duration) {
+    public static String millisToLongDHMSrus(long duration) {
       StringBuffer res = new StringBuffer();
       long temp = 0;
       if (duration >= ONE_SECOND) {
@@ -76,7 +80,47 @@ public class UsefulMethods {
         return "0 секунд";
       }
     }
+    /**
+     * converts time (in milliseconds) to human-readable format
+     *  "<w> days, <x> hours, <y> minutes and (z) seconds"
+     */
+    public static String millisToLongDHMSeng(long duration) {
+      StringBuffer res = new StringBuffer();
+      long temp = 0;
+      if (duration >= ONE_SECOND) {
+        temp = duration / ONE_DAY;
+        if (temp > 0) {
+          duration -= temp * ONE_DAY;
+          res.append(temp).append(temp > 1 ? " days" : " day")
+             .append(duration >= ONE_MINUTE ? ", " : "");
+        }
 
+        temp = duration / ONE_HOUR;
+        if (temp > 0) {
+          duration -= temp * ONE_HOUR;
+          res.append(temp).append(temp > 1 ? " hours" : " hour")
+             .append(duration >= ONE_MINUTE ? ", " : "");
+        }
+
+        temp = duration / ONE_MINUTE;
+        if (temp > 0) {
+          duration -= temp * ONE_MINUTE;
+          res.append(temp).append(temp > 1 ? " minutes" : " minute");
+        }
+
+        if (!res.toString().equals("") && duration >= ONE_SECOND) {
+          res.append(" and ");
+        }
+
+        temp = duration / ONE_SECOND;
+        if (temp > 0) {
+          res.append(temp).append(temp > 1 ? " seconds" : " second");
+        }
+        return res.toString();
+      } else {
+        return "0 seconds";
+      }
+    }
 	
 	/**
 	 *  Метод читает внешние <code> Properties </code>
@@ -89,7 +133,7 @@ public class UsefulMethods {
 	public static Properties loadProperties(String name) throws IOException {
 		Properties prop = new Properties();
 		InputStream inputStream = null;
-			System.out.println(new File(name).getAbsolutePath());
+			logger.debug(new File(name).getAbsolutePath());
 		
 		// Сперва программа читает внешний файл
 		try {

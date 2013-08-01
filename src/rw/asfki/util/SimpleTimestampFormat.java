@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+
 /**
  * Класс создан по аналогии с SimpleDateFormat,
  * но для работы с Timestamp. 
@@ -24,7 +26,7 @@ import java.util.regex.Pattern;
  *
  */
 public class SimpleTimestampFormat extends TimestampFormat {
-	
+	private static Logger logger = Logger.getLogger(SimpleTimestampFormat.class);
 	private String timestampPattern;
 	private static String DEFAULT_PATTERN = "yyyy-mm-dd-hh.mm.ss.nnnnnn";
 	/**
@@ -53,7 +55,7 @@ public class SimpleTimestampFormat extends TimestampFormat {
 		Timestamp ts = null;
 
 //		if (nanoLength == 6 && source.length()== 26) {
-			if (nanoLength == 6) {
+		if (nanoLength == 6) {
 			char[] chars = beforeFormatDate.toCharArray();
 		    chars[10] = ' ';
 		    chars[13] = ':';
@@ -67,7 +69,7 @@ public class SimpleTimestampFormat extends TimestampFormat {
 		SimpleDateFormat parserSDF = new SimpleDateFormat(cutFormatToParse);
 		Date date;
 		try {
-			System.out.println(cutFormatDate);
+			logger.debug(cutFormatDate);
 			date = parserSDF.parse(cutFormatDate);
 			ts = new Timestamp(date.getTime());
 			String nanos = beforeFormatDate.substring(beforeFormatDate.length() - nanoLength);
