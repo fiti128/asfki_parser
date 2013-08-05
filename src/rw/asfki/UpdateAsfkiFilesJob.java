@@ -51,6 +51,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 import rw.asfki.JAXB2Entity.spisok.Root;
 import rw.asfki.JAXB2Entity.spisok.SpisokColumn;
 import rw.asfki.JAXB2Entity.spisok.SpisokRow;
+import rw.asfki.dao.DB2LoadDAO;
 import rw.asfki.dao.InfoDao;
 import rw.asfki.dao.DaoFactory;
 import rw.asfki.dao.YanushDataSource;
@@ -134,6 +135,7 @@ public class UpdateAsfkiFilesJob implements Runnable {
 	private String proxyPort;
 	protected String proxyUser;
 	protected String proxyPassword;
+	private String encoding;
 
 	
 	public UpdateAsfkiFilesJob(String args[]) {
@@ -568,11 +570,11 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 //		}
 //		
 //	}
-	private void convertAndLoadToDb(List<Db2Table> localTablesList,URL url, Db2FileLoadProps db2FileProps, InfoDao infoDao, RemoteFileConfig config, ErrorManager errorManager, ExecutorService executorService) throws Exception {
+	private void convertAndLoadToDb(List<Db2Table> localTablesList,URL url, Db2FileLoadProps db2FileProps, InfoDao infoDao, RemoteFileConfig config, DB2LoadDAO db2LoadDao, ExecutorService executorService) throws Exception {
     		// Создаем сакс ридер
 			XMLReader xr = XMLReaderFactory.createXMLReader();
     		// Создаем обработчик загрузки
-    		AsfkiHandler bodyReaderHandler = AsfkiHandler.getInstance(errorManager,db2FileProps, executorService, delimeter, rowTag, columnTag);
+    		AsfkiHandler bodyReaderHandler = AsfkiHandler.getInstance(db2LoadDao,db2FileProps, executorService, delimeter, rowTag, columnTag);
     		// Создаем обработчик всего файла
     		TableMetaDataRetriever handler = TableMetaDataRetriever.getInstance(localTablesList,infoDao, config, xr, bodyReaderHandler);
     		// Даем саксу наш обработчик
@@ -683,9 +685,10 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				
 				// Собственно грузим данные в базу
 				RemoteFileConfig config = getConfig();
+				DB2LoadDAO db2LoadDao = DaoFactory.getDbLoadDao(errorManager, encoding);
 				for (URL url : list) {
 					Db2FileLoadProps db2FileLoadProperties = createDb2FilePropsUrl(url);
-					convertAndLoadToDb(localTablesList,url, db2FileLoadProperties, infoDao, config, errorManager, executorService);
+					convertAndLoadToDb(localTablesList,url, db2FileLoadProperties, infoDao, config, db2LoadDao, executorService);
 				} 
 				if (connection != null) {
 					connection.close();

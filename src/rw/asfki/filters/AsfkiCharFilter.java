@@ -9,11 +9,21 @@ import org.apache.log4j.Logger;
 public class AsfkiCharFilter extends FilterReader {
 	private final static char BRACERS_OPEN = '«';
 	private final static char BRACERS_END ='»';
-	private final static char BRACERS_ANSI = '"';
-	
+	private final static char UGLY_BRACERS_OPEN = '„';
+	private final static char UGLY_BRACERS_END = '“';
+	private final static char BRACERS_ANSI ='"';
+	private final static char BELARUSSIAN_I='²';
+	private final static char ANSI_I='I';
+	private final static char UNKNOWN_406_I = 406;
+	private final static char UGLY_BRACER = '”';
+//	private final static char[] AMPERSANT= {'&','a','m','p',';'};
+//	private final static char[] GREATER_THAN= {'&','g','t',';'};
+//	private final static char[] LOWER_THAN= {'&','l','t',';'};
 	
 	Logger logger = Logger.getLogger(AsfkiCharFilter.class);
 
+	private int flag = 0;
+	
 	public AsfkiCharFilter(Reader in) {
 		super(in);
 	
@@ -29,11 +39,45 @@ public class AsfkiCharFilter extends FilterReader {
 			
 			char currentChar=cbuf[i];
 
-			if(currentChar == BRACERS_OPEN || currentChar == BRACERS_END) {
+			if(currentChar == BRACERS_OPEN || currentChar == BRACERS_END || 
+					currentChar == UGLY_BRACERS_OPEN || currentChar == UGLY_BRACERS_END
+					 || currentChar == UGLY_BRACER) {
+				logger.debug(String.format("%c detected. Replaced on %c", cbuf[i], BRACERS_ANSI));
 				cbuf[i] = BRACERS_ANSI;
-				logger.debug(String.format("%c or %c detected. Replaced on %c", BRACERS_OPEN, BRACERS_END,BRACERS_ANSI));
 			
 			}
+			if(currentChar == BELARUSSIAN_I) {
+				cbuf[i] = ANSI_I;
+				logger.debug(String.format("Changing %c on %c", BELARUSSIAN_I, ANSI_I));
+			}
+			
+			if(currentChar == UNKNOWN_406_I) {
+				cbuf[i] = ANSI_I;
+				logger.debug(String.format("Changing %c on %c", UNKNOWN_406_I, ANSI_I));
+			}
+			
+			
+			if((flag <= 0 && currentChar == '>') ||	(flag >= 1 && currentChar == '<')){
+				logger.debug("fixup1<>:" + cbuf[i] + "@" +i);
+				cbuf[i]='_';
+				logger.debug(" fixed1<>:" + cbuf[i]);
+//				System.err.write(arg0,(i > 10) ? i-10 :i,(i < total-20) ? 30: total-i);
+			}
+			if(currentChar == '<'){ 
+				if(i < total-1){
+					char nextChar=cbuf[i+1];
+					if (nextChar<'A' && nextChar!='/' && nextChar!='?') {
+						logger.debug("fixup1.1<>:"+currentChar+"@"+i);
+						cbuf[i]='_';
+						logger.debug(" fixed1.1<>:"+cbuf[i]);
+					} else 	flag++;
+				} else 	flag++;
+			}
+			if(currentChar == '>') 
+				flag--;
+			
+			
+			
 			
 		}
 		

@@ -15,18 +15,16 @@ import org.xml.sax.helpers.DefaultHandler;
 import rw.asfki.Db2Writer;
 import rw.asfki.Db2WriterPipeImpl;
 import rw.asfki.dao.DB2LoadDAO;
-import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 import rw.asfki.domain.Db2FileLoadProps;
-import rw.asfki.error.ErrorManager;
+
 
 public class AsfkiHandler extends DefaultHandler {
 	protected Logger logger = Logger.getLogger(AsfkiHandler.class);
 	private static final int ERROR_PIPE_CONNECTED = 535;
 	private static final int PIPE_BUFFER = 131072;
-	private ErrorManager errorManager;
+	private DB2LoadDAO db2LoadDao;
 	private String root = "table";
 	private Db2Writer writer;
-	private String string;
 	private List<String> list = new ArrayList<String>();
 	private String rowTag;
 	private String colTag;
@@ -36,20 +34,22 @@ public class AsfkiHandler extends DefaultHandler {
 	private String delimeter;
 	private boolean firstTime = true;
 	private ExecutorService executorService;
+	private StringBuilder sb;
 	
-	private AsfkiHandler(ErrorManager errorManager, Db2FileLoadProps db2File,ExecutorService executorService, String delimeter, String rowTag,String colTag) {
+	private AsfkiHandler(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File,ExecutorService executorService, String delimeter, String rowTag,String colTag) {
 		super();
 		this.executorService = executorService;
-		this.errorManager = errorManager;
+		this.db2LoadDao = db2LoadDao;
 		this.pipeName = "\\\\.\\pipe\\" +db2File.getTable();
 		this.db2File = db2File;
 		this.delimeter = delimeter;
 		this.rowTag = rowTag.intern();
 		this.colTag = colTag.intern();
+		sb = new StringBuilder();
 		
 	}
-	public static AsfkiHandler getInstance(ErrorManager errorManager, Db2FileLoadProps db2File, ExecutorService executorService, String delimeter, String rowTag,String colTag) {
-		return new AsfkiHandler(errorManager,db2File,executorService, delimeter,rowTag,colTag);
+	public static AsfkiHandler getInstance(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File, ExecutorService executorService, String delimeter, String rowTag,String colTag) {
+		return new AsfkiHandler(db2LoadDao,db2File,executorService, delimeter,rowTag,colTag);
 	}
 		
 	private boolean createPipe()
@@ -94,7 +94,6 @@ public class AsfkiHandler extends DefaultHandler {
 		executorService.execute(new Runnable(){
     		public void run() {
     			try {
-    				DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(errorManager);
     				db2LoadDao.loadFile(db2File);
     			} catch (Throwable e) {
     				logger.error("Program stoped due to an error on Load Thread\n",e);
@@ -132,8 +131,7 @@ public class AsfkiHandler extends DefaultHandler {
 				list.clear();
 			}
 				if (qName == colTag) {
-					string = "";
-					
+					sb.setLength(0);
 				}
 		}
 
@@ -153,7 +151,8 @@ public class AsfkiHandler extends DefaultHandler {
 
 					}
 			if(qName == colTag) {
-				list.add(string.trim());
+				list.add(sb.toString().trim());
+				sb.setLength(0);
 			}
 			if(qName == root) {
 				try {
@@ -167,7 +166,7 @@ public class AsfkiHandler extends DefaultHandler {
 
 		public void characters (char[] ch, int start, int length) 
 		{
-			string = new String(ch,start,length);
+			sb.append(ch,start,length);
 		}
 		
 

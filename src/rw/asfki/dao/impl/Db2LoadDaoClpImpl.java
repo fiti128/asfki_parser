@@ -16,8 +16,9 @@ import rw.asfki.domain.Db2FileLoadProps;
 import rw.asfki.domain.Db2Table;
 import rw.asfki.error.ErrorManager;
 
-public class Db2LoadDaoClpImpl implements DB2LoadDAO {
-	protected static Logger logger = Logger.getLogger(Db2LoadDaoClpImpl.class);
+public abstract class Db2LoadDaoClpImpl implements DB2LoadDAO {
+	private static final String DEFAULT_CODEPAGE = "1251";
+	private static Logger logger = Logger.getLogger(Db2LoadDaoClpImpl.class);
 	private ErrorManager errorManager;
 	static int counter = 0;
 	private File tempDir;
@@ -25,7 +26,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	
 	
 	
-	private Db2LoadDaoClpImpl(ErrorManager errorManager) throws IOException {
+	protected Db2LoadDaoClpImpl(ErrorManager errorManager) throws IOException {
 		this.errorManager = errorManager;
 		tempDir = new File("temp");
 		if (!tempDir.isDirectory()) {
@@ -34,9 +35,6 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 	
 	}
 	
-	public static Db2LoadDaoClpImpl getInstance(ErrorManager errorManager) throws IOException {
-		return new Db2LoadDaoClpImpl(errorManager);
-	}
 	@Override
 	public void loadFile(String absPathToFile, String delimeter,
 			String absPathToLogFile, String schema, String table)
@@ -104,6 +102,8 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		String absPathToLogFolder = props.getAbsPathToLogFolder();
 		String schema = props.getSchema();
 		String table = props.getTable();
+		String codepage = getCodepage();
+		
 		
 		File logFile = new File(absPathToLogFolder, table + ".txt");
 		String absolutePathToLogFile = logFile.getAbsolutePath();
@@ -111,7 +111,7 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		logger.debug(String.format("Abs path to log file of db2 load command is %s",absolutePathToLogFile));
 		StringBuilder sb = new StringBuilder();
 		sb.append("LOAD FROM ").append("\"\\\\.\\pipe\\").append(table).append("\"")
-			.append(" OF DEL modified by codepage=1208 nochardel coldel").append(delimeter)
+			.append(" OF DEL modified by codepage=").append(codepage).append(" nochardel coldel").append(delimeter)
 			.append(" MESSAGES ").append("\"").append(absolutePathToLogFile).append("\"")
 			.append(" REPLACE INTO ").append(schema).append(".").append(table).append(" DATA BUFFER 10000");
 		String loadCommand = sb.toString();
@@ -168,6 +168,10 @@ public class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		sb.setLength(0);
 		sb.append("Files remaining: ").append(size - counter).append(" from ").append(size);
 		logger.info(sb.toString());
+	}
+
+	protected String getCodepage() {
+		return DEFAULT_CODEPAGE;
 	}
 
 	@Override

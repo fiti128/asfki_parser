@@ -120,7 +120,8 @@ public class Db2Column {
 	}
 	@Override
 	public String toString() {
-		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
+//		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
+		int columnSize = size;
 		String nullableString = (nullable == 1) ? "": " not null";
 
 //		nullableString = "";
@@ -142,8 +143,10 @@ public class Db2Column {
 				
 									
 			case Types.CHAR: 
-								columnSize = (columnSize > 254) ? 254 : columnSize;
+				
+//								columnSize = (columnSize > 254) ? 254 : columnSize;
 								printDetails = new StringBuilder().
+								// Varchar because of Harlach V. 255-59-14 IBA
 									append("CHAR(").
 									append(columnSize).
 									append(")").toString();

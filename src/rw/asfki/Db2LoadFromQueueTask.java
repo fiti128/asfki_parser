@@ -16,8 +16,8 @@ import org.apache.log4j.Logger;
 
 import rw.asfki.domain.*;
 import rw.asfki.dao.DB2LoadDAO;
+import rw.asfki.dao.DaoFactory;
 import rw.asfki.dao.impl.DB2LoadDAOJDBCImpl;
-import rw.asfki.dao.impl.Db2LoadDaoClpImpl;
 import rw.asfki.error.ErrorManager;
 /**
  * Класс создан для многопоточной работы со списком. Цель - вносить в базу элементы, как только 
@@ -60,7 +60,7 @@ public class Db2LoadFromQueueTask implements Runnable {
 	}
 	public Db2LoadFromQueueTask(Queue<Db2FileLoadProps> queue, Properties props, ErrorManager errorManager) throws IOException {
 		this.queue = queue;
-		this.db2load = Db2LoadDaoClpImpl.getInstance(errorManager);
+		this.db2load = DaoFactory.getDbLoadDao(errorManager);
 	}
 	/**
 	 * Метод <code>isAlive()</code> показывает продолжает ли действовать поток этого класса.

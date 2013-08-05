@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 public class AsfkiFilter extends FilterInputStream {
 	Logger logger = Logger.getLogger(AsfkiFilter.class);
-	private int flag=0;
+
 	private char delimeter;
 	public AsfkiFilter(InputStream arg0, char delimeter) {
 		super(arg0);
@@ -43,24 +43,7 @@ public class AsfkiFilter extends FilterInputStream {
 				logger.debug("fixup1:" + currentChar); 
 				arg0[i]=' ';
 			}
-			if((flag <= 0 && currentChar == '>') ||	(flag >= 1 && currentChar == '<')){
-				logger.debug("fixup1<>:" + arg0[i] + "@" +i);
-				arg0[i]='_';
-				logger.debug(" fixed1<>:" + arg0[i]);
-//				System.err.write(arg0,(i > 10) ? i-10 :i,(i < total-20) ? 30: total-i);
-			}
-			if(currentChar == '<'){ 
-				if(i < total-1){
-					char nextChar=(char)arg0[i+1];
-					if (nextChar<'A' && nextChar!='/' && nextChar!='?') {
-						logger.debug("fixup1.1<>:"+currentChar+"@"+i);
-						arg0[i]='_';
-						logger.debug(" fixed1.1<>:"+arg0[i]);
-					} else 	flag++;
-				} else 	flag++;
-			}
-			if(currentChar == '>') 
-				flag--;
+			
 		}
 		return retLen;
 	}

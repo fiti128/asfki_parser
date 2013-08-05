@@ -19,6 +19,8 @@ import org.apache.log4j.Logger;
  * @since 26.05.2013
  */
 public class Db2WriterPipeImpl implements Db2Writer {
+//	private static final String UTF8_CHARSET_NAME = "UTF-8";
+	private static final String CP1251_CHARSET_NAME = "windows-1251";
 	private static Logger logger = Logger.getLogger(Db2WriterPipeImpl.class);
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
@@ -43,7 +45,7 @@ public class Db2WriterPipeImpl implements Db2Writer {
 		}
 			sb.append(stringList.get(stringList.size() - 1));
 			sb.append(lineSeparator);
-			byte[] bytes = sb.toString().getBytes("UTF-8");
+			byte[] bytes = sb.toString().getBytes(CP1251_CHARSET_NAME);
 			Pipes.WriteFile(namedPipeHandle, bytes, bytes.length);
 			
 	}
