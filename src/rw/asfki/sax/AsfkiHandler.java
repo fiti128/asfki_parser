@@ -3,7 +3,6 @@ package rw.asfki.sax;
 import ibm.Pipes;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -91,16 +90,16 @@ public class AsfkiHandler extends DefaultHandler {
 	}
 	
 	private void openDbLoad() {
+
 		executorService.execute(new Runnable(){
     		public void run() {
     			try {
-					DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(errorManager);
-					db2LoadDao.loadFile(db2File);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				} catch (SQLException e) {
-					throw new RuntimeException(e);
-				}
+    				DB2LoadDAO db2LoadDao = Db2LoadDaoClpImpl.getInstance(errorManager);
+    				db2LoadDao.loadFile(db2File);
+    			} catch (Throwable e) {
+    				logger.error("Program stoped due to an error on Load Thread\n",e);
+    				System.exit(1);
+    			}
     		}
     	});
 		
@@ -119,6 +118,7 @@ public class AsfkiHandler extends DefaultHandler {
 			throw new SAXException("Could not create Pipe");
 		}
 	}
+	
 	public void startElement(String namespaceURI,
 			String localName,
 			String qName, 
