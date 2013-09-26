@@ -17,7 +17,7 @@ import rw.asfki.domain.Db2Table;
 import rw.asfki.error.ErrorManager;
 
 public abstract class Db2LoadDaoClpImpl implements DB2LoadDAO {
-	private static final String DEFAULT_CODEPAGE = "1251";
+
 	private static Logger logger = Logger.getLogger(Db2LoadDaoClpImpl.class);
 	private ErrorManager errorManager;
 	static int counter = 0;
@@ -170,9 +170,7 @@ public abstract class Db2LoadDaoClpImpl implements DB2LoadDAO {
 		logger.info(sb.toString());
 	}
 
-	protected String getCodepage() {
-		return DEFAULT_CODEPAGE;
-	}
+	protected abstract String getCodepage();
 
 	@Override
 	public void cleanTables(List<String> cleanList, String schema)

@@ -34,6 +34,7 @@ public class ErrorManager {
 	private static String ZIP_NAME = "errors.zip";
 	protected Logger logger = Logger.getLogger(ErrorManager.class);
 	private File errorDir;
+	private List<String> messageList;
 	private List<Db2Table> localTablesList;
 	private List<Db2Table> errorTablesList;
 	
@@ -82,7 +83,12 @@ public class ErrorManager {
 		
 		
 	}
-
+	public void addMessage(String message) {
+		messageList = messageList == null ? new ArrayList<String>() : messageList;
+		messageList.add(message);
+		
+	}
+	
 	public void sendToMail(String email) throws IOException, AddressException, MessagingException {
 		// Archive error folder
 		File zipFile = new File(ZIP_NAME);
@@ -127,6 +133,9 @@ public class ErrorManager {
 		
 		msg.setSentDate(new Date());
 		StringBuilder additionalInfo = new StringBuilder();
+		for (String message : messageList) {
+			additionalInfo.append(message).append("\n");
+		}
 		additionalInfo.append("\n--------------------------------\n")
 		.append("Список загруженных таблиц: \n");
 		for (Db2Table table : localTablesList) {
