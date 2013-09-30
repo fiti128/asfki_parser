@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="DB2Connector">
+    <CLASSES>
+      <root url="jar://D:/libs/db2/db2jcc_license_cisuz.jar!/" />
+      <root url="jar://D:/libs/db2/db2jcc.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

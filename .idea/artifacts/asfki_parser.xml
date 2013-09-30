@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="asfki_parser">
+    <output-path>D:/Export</output-path>
+    <root id="archive" name="asfki_parser.jar">
+      <element id="module-output" name="ASFKI_Parser1" />
+      <element id="library" level="project" name="DB2Connector" />
+      <element id="library" level="project" name="Javamail" />
+      <element id="library" level="project" name="Log4j" />
+      <element id="library" level="module" name="pipe.jar" module-name="ASFKI_Parser1" />
+      <element id="library" level="module" name="xz-1.2.jar" module-name="ASFKI_Parser1" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+    </root>
+  </artifact>
+</component>
