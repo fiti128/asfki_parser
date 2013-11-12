@@ -1,8 +1,10 @@
 package rw.asfki.domain;
 
+import rw.asfki.util.fieldComparable.FieldComparable;
+
 import java.sql.Types;
 
-public class Db2Column {
+public class Db2Column implements FieldComparable<Db2Column> {
 
 	private String name;
 	private int dataType;
@@ -120,8 +122,8 @@ public class Db2Column {
 	}
 	@Override
 	public String toString() {
-//		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
-		int columnSize = size;
+		int columnSize = (sizeMultiplier == 0) ? size : size * sizeMultiplier;
+//		int columnSize = size;
 		String nullableString = (nullable == 1) ? "": " not null";
 
 //		nullableString = "";
@@ -144,7 +146,7 @@ public class Db2Column {
 									
 			case Types.CHAR: 
 				
-//								columnSize = (columnSize > 254) ? 254 : columnSize;
+								columnSize = (columnSize > 254) ? 254 : columnSize;
 								printDetails = new StringBuilder().
 								// Varchar because of Harlach V. 255-59-14 IBA
 									append("CHAR(").
@@ -183,9 +185,10 @@ public class Db2Column {
 		
 		return sb.toString();
 	}
-	
-	
-	
 
-	
+
+    @Override
+    public String compareFields(Db2Column field) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

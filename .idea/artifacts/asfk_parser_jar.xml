@@ -1,0 +1,15 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="asfk_parser:jar">
+    <output-path>D:/Share/asfki_loader</output-path>
+    <root id="archive" name="asfk_parser.jar">
+      <element id="module-output" name="asfk_parser" />
+      <element id="extracted-dir" path="$APPLICATION_HOME_DIR$/lib/junit-4.10.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/xz/xz-1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/pipeload/pipe.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/db2/db2jcc_license_cisuz.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/db2/db2jcc.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/javamail/javax.mail.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="D:/libs/apache-log4j-1.2.17/log4j-1.2.17.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

@@ -3,6 +3,7 @@ package rw.asfki.sax;
 import ibm.Pipes;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +36,11 @@ public class AsfkiHandler extends DefaultHandler {
 	private boolean firstTime = true;
 	private ExecutorService executorService;
 	private StringBuilder sb;
+    private Charset encoding;
 	
-	private AsfkiHandler(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File,ExecutorService executorService, String delimeter, String rowTag,String colTag) {
+	private AsfkiHandler(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File,
+                         ExecutorService executorService, String delimeter,
+                         String rowTag,String colTag, Charset encoding) {
 		super();
 		this.executorService = executorService;
 		this.db2LoadDao = db2LoadDao;
@@ -45,11 +49,14 @@ public class AsfkiHandler extends DefaultHandler {
 		this.delimeter = delimeter;
 		this.rowTag = rowTag.intern();
 		this.colTag = colTag.intern();
+        this.encoding = encoding;
 		sb = new StringBuilder();
 		
 	}
-	public static AsfkiHandler getInstance(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File, ExecutorService executorService, String delimeter, String rowTag,String colTag) {
-		return new AsfkiHandler(db2LoadDao,db2File,executorService, delimeter,rowTag,colTag);
+	public static AsfkiHandler getInstance(DB2LoadDAO db2LoadDao, Db2FileLoadProps db2File,
+                                           ExecutorService executorService, String delimeter,
+                                           String rowTag,String colTag, Charset encoding) {
+		return new AsfkiHandler(db2LoadDao,db2File,executorService, delimeter,rowTag,colTag,encoding);
 	}
 		
 	private boolean createPipe()
@@ -111,7 +118,7 @@ public class AsfkiHandler extends DefaultHandler {
 		if (createPipe()) {
 			openDbLoad();
 			connectToPipe();
-			writer = new Db2WriterPipeImpl(namedPipeHandle ,delimeter);
+			writer = new Db2WriterPipeImpl(namedPipeHandle ,delimeter,encoding);
 		}
 		else {
 			throw new SAXException("Could not create Pipe");

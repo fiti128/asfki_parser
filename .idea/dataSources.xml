@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" hash="3228740233">
+    <data-source source="LOCAL" name="First" product="DB2/NT64" version="SQL10050" jdbc-version="3.0" driver-name="IBM DB2 JDBC Universal Driver Architecture" driver-version="3.57.82" uuid="2d996868-e765-442f-a4a3-aa47c3ce1412">
+      <extra-name-characters>@#</extra-name-characters>
+      <identifier-quote-string>&quot;</identifier-quote-string>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.ibm.db2.jcc.DB2Driver</jdbc-driver>
+      <jdbc-url>jdbc:db2://ircm-710-5:50000/first</jdbc-url>
+      <user-name>ircm_yanusheusky</user-name>
+      <user-password>dfe8df84dfd3dfc7df9bdf99df9a</user-password>
+      <libraries>
+        <library>
+          <url>jar://D:/libs/db2/db2jcc_license_cisuz.jar!/</url>
+        </library>
+        <library>
+          <url>jar://D:/libs/db2/db2jcc.jar!/</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="Win1251" product="DB2/NT64" version="SQL10050" jdbc-version="3.0" driver-name="IBM DB2 JDBC Universal Driver Architecture" driver-version="3.57.82" uuid="2cde06a5-ca49-42dc-b0f5-8dd4c09c8f06">
+      <extra-name-characters>@#</extra-name-characters>
+      <identifier-quote-string>&quot;</identifier-quote-string>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.ibm.db2.jcc.DB2Driver</jdbc-driver>
+      <jdbc-url>jdbc:db2://ircm-710-5:50000/win1251</jdbc-url>
+      <user-name>ircm_yanusheusky</user-name>
+      <user-password>dfe8df84dfd3dfc7df9bdf99df9a</user-password>
+      <libraries>
+        <library>
+          <url>jar://D:/libs/db2/db2jcc_license_cisuz.jar!/</url>
+        </library>
+        <library>
+          <url>jar://D:/libs/db2/db2jcc.jar!/</url>
+        </library>
+      </libraries>
+    </data-source>
+  </component>
+</project>
+

@@ -23,6 +23,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import com.sun.jmx.remote.internal.ArrayQueue;
 import org.apache.log4j.Logger;
 
 import rw.asfki.domain.Db2Table;
@@ -34,7 +35,7 @@ public class ErrorManager {
 	private static String ZIP_NAME = "errors.zip";
 	protected Logger logger = Logger.getLogger(ErrorManager.class);
 	private File errorDir;
-	private List<String> messageList;
+	private List<String> messageList = new ArrayList<String>();
 	private List<Db2Table> localTablesList;
 	private List<Db2Table> errorTablesList;
 	
@@ -84,7 +85,7 @@ public class ErrorManager {
 		
 	}
 	public void addMessage(String message) {
-		messageList = messageList == null ? new ArrayList<String>() : messageList;
+
 		messageList.add(message);
 		
 	}
@@ -133,11 +134,15 @@ public class ErrorManager {
 		
 		msg.setSentDate(new Date());
 		StringBuilder additionalInfo = new StringBuilder();
-		for (String message : messageList) {
-			additionalInfo.append(message).append("\n");
-		}
-		additionalInfo.append("\n--------------------------------\n")
-		.append("Список загруженных таблиц: \n");
+        if (messageList.size() > 0 ) {
+
+            additionalInfo.append("Список измененных или вновь созданных таблиц: \n");
+            for (String message : messageList) {
+                additionalInfo.append(message).append("\n");
+            }
+        }
+            additionalInfo.append("\n--------------------------------\n");
+		additionalInfo.append("Список загруженных таблиц: \n");
 		for (Db2Table table : localTablesList) {
 			additionalInfo.append(table).append("\n");
 		}
@@ -169,7 +174,7 @@ public class ErrorManager {
 		}
 		else {
 			msg.setSubject("Отчет по работе АСФКИ парсера. Ошибок не было.");
-			sb.append("Работа парсера прошла успешно. Ошибок выявлено не было\n\nСистема")
+			sb.append("Работа парсера прошла успешно. Ошибок выявлено не было\n\nСистема\n")
 				.append(additionalInfo);
 			text = sb.toString();
 			logger.debug(String.format("Email text: %n%s", text));
