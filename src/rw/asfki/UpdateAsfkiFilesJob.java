@@ -18,6 +18,7 @@ import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -156,6 +157,11 @@ public class UpdateAsfkiFilesJob implements Runnable {
 			logger.error("Не смог прочитать файл с настройками: " + config );
 		}
 		initParserProperties(props);
+        if(!encoding.equals("UTF-8")&&!encoding.equals("Windows-1251")) {
+            logger.error("Encoding must be UTF-8 or Windows-1251");
+            System.exit(1);
+        }
+
 	}
 	
 	private Properties parseCommandLine(String[] args) {
@@ -570,13 +576,16 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 //		}
 //		
 //	}
-	private void convertAndLoadToDb(List<Db2Table> localTablesList,URL url, Db2FileLoadProps db2FileProps, InfoDao infoDao, RemoteFileConfig config, DB2LoadDAO db2LoadDao, ExecutorService executorService) throws Exception {
+	private void convertAndLoadToDb(List<Db2Table> localTablesList,URL url, Db2FileLoadProps db2FileProps,
+                                    InfoDao infoDao, RemoteFileConfig config, DB2LoadDAO db2LoadDao, ExecutorService executorService, ErrorManager errorManager) throws Exception {
     		// Создаем сакс ридер
 			XMLReader xr = XMLReaderFactory.createXMLReader();
     		// Создаем обработчик загрузки
-    		AsfkiHandler bodyReaderHandler = AsfkiHandler.getInstance(db2LoadDao,db2FileProps, executorService, delimeter, rowTag, columnTag);
+            Charset charset = Charset.forName(encoding);
+
+    		AsfkiHandler bodyReaderHandler = AsfkiHandler.getInstance(db2LoadDao,db2FileProps, executorService, delimeter, rowTag, columnTag, charset);
     		// Создаем обработчик всего файла
-    		TableMetaDataRetriever handler = TableMetaDataRetriever.getInstance(localTablesList,infoDao, config, xr, bodyReaderHandler);
+    		TableMetaDataRetriever handler = TableMetaDataRetriever.getInstance(localTablesList,infoDao, config, xr, bodyReaderHandler,errorManager,encoding);
     		// Даем саксу наш обработчик
     		xr.setContentHandler(handler);
        		
@@ -688,7 +697,7 @@ private void initAttributes(Properties props, String attributeTarget, List<Strin
 				DB2LoadDAO db2LoadDao = DaoFactory.getDbLoadDao(errorManager, encoding);
 				for (URL url : list) {
 					Db2FileLoadProps db2FileLoadProperties = createDb2FilePropsUrl(url);
-					convertAndLoadToDb(localTablesList,url, db2FileLoadProperties, infoDao, config, db2LoadDao, executorService);
+					convertAndLoadToDb(localTablesList,url, db2FileLoadProperties, infoDao, config, db2LoadDao, executorService,errorManager);
 				} 
 				if (connection != null) {
 					connection.close();

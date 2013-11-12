@@ -1,0 +1,19 @@
+
+D:\Share\asfki_loader>if not exist D:\Share\asfki_loader\logs mkdir D:\Share\asfki_loader\logs 
+
+D:\Share\asfki_loader>db2cmd /w /c /i D:\Share\asfki_loader\env.bat 
+[INFO] [01:23:37] Starting job
+[INFO] [01:23:38] Table files to update: ADM DOR 
+[INFO] [01:23:38] Getting local Meta Data
+[INFO] [01:23:41] Local Meta Data info updated
+[INFO] [01:23:41] ADM start loading
+[INFO] [01:23:42] DOR start loading
+[INFO] [01:23:44] IC12.ADM loaded.
+[INFO] [01:23:44] Files remaining: 1 from 2
+[INFO] [01:23:45] IC12.DOR loaded.
+[INFO] [01:23:45] Files remaining: 0 from 2
+[INFO] [01:23:45] local_spisok.xml updated
+[INFO] [01:23:45] Elapsed time: 7 seconds
+[INFO] [01:23:45] End of job
+[INFO] [01:23:45] --------------------------------------------------
+Для продолжения нажмите любую клавишу . . . 

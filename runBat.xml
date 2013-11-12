@@ -1,0 +1,8 @@
+<project name="RunBat" basedir="." default="main">
+<property name="src"     value="D:\Share\asfki_loader"/>
+	<target name="main">
+		<exec dir="D:\Share\asfki_loader" executable="cmd.exe" output="output.txt">
+		  <arg line="/c start.bat"/>
+		</exec>
+	</target>
+</project>

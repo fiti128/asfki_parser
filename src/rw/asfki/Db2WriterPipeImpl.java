@@ -8,6 +8,7 @@ package rw.asfki;
 
 import ibm.Pipes;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import org.apache.log4j.Logger;
 
@@ -19,18 +20,19 @@ import org.apache.log4j.Logger;
  * @since 26.05.2013
  */
 public class Db2WriterPipeImpl implements Db2Writer {
-//	private static final String UTF8_CHARSET_NAME = "UTF-8";
-	private static final String CP1251_CHARSET_NAME = "windows-1251";
+
 	private static Logger logger = Logger.getLogger(Db2WriterPipeImpl.class);
 	private static String DEFAULT_DELIMETER = "|";
 	private String columnDelimeter = DEFAULT_DELIMETER;
 	private String lineSeparator; 
 	private int namedPipeHandle;
+    private Charset charset;
 
 	
-	public Db2WriterPipeImpl(int namedPipeHandle, String columnDelimeter) {
+	public Db2WriterPipeImpl(int namedPipeHandle, String columnDelimeter,Charset charset) {
 		this.namedPipeHandle = namedPipeHandle;
 		this.columnDelimeter = columnDelimeter;
+        this.charset = charset;
 		lineSeparator  = java.security.AccessController.doPrivileged(
 	            new sun.security.action.GetPropertyAction("line.separator"));
 
@@ -45,7 +47,7 @@ public class Db2WriterPipeImpl implements Db2Writer {
 		}
 			sb.append(stringList.get(stringList.size() - 1));
 			sb.append(lineSeparator);
-			byte[] bytes = sb.toString().getBytes(CP1251_CHARSET_NAME);
+			byte[] bytes = sb.toString().getBytes(charset);
 			Pipes.WriteFile(namedPipeHandle, bytes, bytes.length);
 			
 	}
